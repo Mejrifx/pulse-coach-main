@@ -133,10 +133,10 @@ const Hero: React.FC = () => {
       rotateY: -10,
       accent: 'emerald',
       floatClass:
-        'left-[2%] top-[16%] sm:left-[4%] sm:top-[14%] md:left-[6%] md:top-[12%] lg:left-[7%] w-[min(46vw,220px)] -rotate-2',
+        'left-[0%] top-[9%] sm:left-[2%] sm:top-[8%] md:left-[3%] md:top-[7%] lg:left-[4%] w-[min(40vw,200px)] -rotate-2',
       drift: {
-        from: { x: 52, y: 40, scale: 0.94 },
-        to: { x: -88, y: -72, scale: 1.02, rotateX: -4, rotateY: 14 },
+        from: { x: 44, y: 34, scale: 0.94 },
+        to: { x: -102, y: -86, scale: 1.02, rotateX: -4, rotateY: 14 },
       },
     },
     {
@@ -149,10 +149,10 @@ const Hero: React.FC = () => {
       rotateY: 12,
       accent: 'orange',
       floatClass:
-        'right-[0%] top-[20%] sm:right-[2%] md:right-[5%] md:top-[18%] lg:right-[8%] w-[min(46vw,220px)] rotate-2',
+        'right-[0%] top-[11%] sm:right-[0%] md:right-[2%] md:top-[9%] lg:right-[3%] lg:top-[8%] w-[min(40vw,200px)] rotate-2',
       drift: {
-        from: { x: -48, y: 36, scale: 0.94 },
-        to: { x: 92, y: -64, scale: 1.02, rotateX: 5, rotateY: -12 },
+        from: { x: -42, y: 32, scale: 0.94 },
+        to: { x: 106, y: -78, scale: 1.02, rotateX: 5, rotateY: -12 },
       },
     },
     {
@@ -165,10 +165,10 @@ const Hero: React.FC = () => {
       rotateY: 8,
       accent: 'blue',
       floatClass:
-        'left-[5%] bottom-[26%] sm:left-[7%] md:bottom-[22%] lg:left-[11%] lg:bottom-[20%] w-[min(46vw,220px)] rotate-1',
+        'left-[0%] bottom-[10%] sm:left-[2%] sm:bottom-[9%] md:left-[3%] md:bottom-[8%] lg:left-[4%] lg:bottom-[7%] w-[min(40vw,200px)] rotate-1',
       drift: {
-        from: { x: 44, y: -36, scale: 0.94 },
-        to: { x: -76, y: 68, scale: 1.02, rotateX: -5, rotateY: 10 },
+        from: { x: 38, y: -28, scale: 0.94 },
+        to: { x: -94, y: 82, scale: 1.02, rotateX: -5, rotateY: 10 },
       },
     },
     {
@@ -181,10 +181,10 @@ const Hero: React.FC = () => {
       rotateY: -8,
       accent: 'stone',
       floatClass:
-        'right-[3%] bottom-[22%] sm:right-[5%] md:bottom-[18%] lg:right-[9%] lg:bottom-[16%] w-[min(46vw,210px)] -rotate-1',
+        'right-[0%] bottom-[8%] sm:right-[1%] sm:bottom-[7%] md:right-[2%] md:bottom-[6%] lg:right-[3%] lg:bottom-[5%] w-[min(40vw,200px)] -rotate-1',
       drift: {
-        from: { x: -40, y: -32, scale: 0.94 },
-        to: { x: 80, y: 64, scale: 1.02, rotateX: 4, rotateY: -11 },
+        from: { x: -34, y: -26, scale: 0.94 },
+        to: { x: 98, y: 78, scale: 1.02, rotateX: 4, rotateY: -11 },
       },
     },
   ];
