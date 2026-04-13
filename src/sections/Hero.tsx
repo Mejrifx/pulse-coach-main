@@ -133,7 +133,7 @@ const Hero: React.FC = () => {
       rotateY: -10,
       accent: 'emerald',
       floatClass:
-        'left-[0%] top-[9%] sm:left-[2%] sm:top-[8%] md:left-[3%] md:top-[7%] lg:left-[4%] w-[min(40vw,200px)] -rotate-2',
+        'left-[2%] top-[11%] sm:left-[3%] sm:top-[10%] md:left-[4%] md:top-[9%] lg:left-[5%] w-[min(40vw,200px)] -rotate-2',
       drift: {
         from: { x: 44, y: 34, scale: 0.94 },
         to: { x: -102, y: -86, scale: 1.02, rotateX: -4, rotateY: 14 },
@@ -149,7 +149,7 @@ const Hero: React.FC = () => {
       rotateY: 12,
       accent: 'orange',
       floatClass:
-        'right-[0%] top-[11%] sm:right-[0%] md:right-[2%] md:top-[9%] lg:right-[3%] lg:top-[8%] w-[min(40vw,200px)] rotate-2',
+        'right-[2%] top-[13%] sm:right-[2%] md:right-[3%] md:top-[11%] lg:right-[5%] lg:top-[10%] w-[min(40vw,200px)] rotate-2',
       drift: {
         from: { x: -42, y: 32, scale: 0.94 },
         to: { x: 106, y: -78, scale: 1.02, rotateX: 5, rotateY: -12 },
@@ -161,14 +161,14 @@ const Hero: React.FC = () => {
       subtitle: '90-day cohort',
       metric: '94%',
       depth: 80,
-      rotateX: 6,
-      rotateY: 8,
+      rotateX: -5,
+      rotateY: 10,
       accent: 'blue',
       floatClass:
-        'left-[0%] bottom-[10%] sm:left-[2%] sm:bottom-[9%] md:left-[3%] md:bottom-[8%] lg:left-[4%] lg:bottom-[7%] w-[min(40vw,200px)] rotate-1',
+        'left-[2%] bottom-[12%] sm:left-[3%] sm:bottom-[11%] md:left-[4%] md:bottom-[10%] lg:left-[6%] lg:bottom-[9%] w-[min(40vw,200px)] -rotate-2',
       drift: {
         from: { x: 38, y: -28, scale: 0.94 },
-        to: { x: -94, y: 82, scale: 1.02, rotateX: -5, rotateY: 10 },
+        to: { x: -94, y: 82, scale: 1.02, rotateX: 6, rotateY: -14 },
       },
     },
     {
@@ -177,14 +177,14 @@ const Hero: React.FC = () => {
       subtitle: 'Due today',
       metric: '3 done',
       depth: 48,
-      rotateX: -5,
-      rotateY: -8,
+      rotateX: 4,
+      rotateY: -12,
       accent: 'stone',
       floatClass:
-        'right-[0%] bottom-[8%] sm:right-[1%] sm:bottom-[7%] md:right-[2%] md:bottom-[6%] lg:right-[3%] lg:bottom-[5%] w-[min(40vw,200px)] -rotate-1',
+        'right-[2%] bottom-[10%] sm:right-[2%] sm:bottom-[9%] md:right-[4%] md:bottom-[8%] lg:right-[6%] lg:bottom-[7%] w-[min(40vw,200px)] rotate-2',
       drift: {
         from: { x: -34, y: -26, scale: 0.94 },
-        to: { x: 98, y: 78, scale: 1.02, rotateX: 4, rotateY: -11 },
+        to: { x: 98, y: 78, scale: 1.02, rotateX: -5, rotateY: 14 },
       },
     },
   ];
