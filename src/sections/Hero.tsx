@@ -1,4 +1,4 @@
-import React, { useRef, useLayoutEffect, useState } from 'react';
+import React, { useRef, useLayoutEffect } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { motion } from 'framer-motion';
@@ -22,6 +22,13 @@ type HeroCardData = {
   rotateX: number;
   rotateY: number;
   accent: 'emerald' | 'orange' | 'blue' | 'stone';
+  /** CSS placement (absolute within orbit layer) */
+  floatClass: string;
+  /** Scroll scrub: start pulled toward hero center → end drifts outward (screen coords: +x right, +y down) */
+  drift: {
+    from: { x: number; y: number; scale: number };
+    to: { x: number; y: number; scale: number; rotateX: number; rotateY: number };
+  };
 };
 
 const accentStyles = {
@@ -47,22 +54,6 @@ const accentStyles = {
   },
 } as const;
 
-function useXlSidebar() {
-  const [xl, setXl] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia('(min-width: 1280px)').matches,
-  );
-
-  useLayoutEffect(() => {
-    const mq = window.matchMedia('(min-width: 1280px)');
-    const apply = () => setXl(mq.matches);
-    apply();
-    mq.addEventListener('change', apply);
-    return () => mq.removeEventListener('change', apply);
-  }, []);
-
-  return xl;
-}
-
 function HeroCard({
   data,
   className = '',
@@ -75,50 +66,55 @@ function HeroCard({
   const Icon = data.icon;
   const a = accentStyles[data.accent];
   return (
-    <motion.div
-      className={`hero-card ${className}`}
-      initial={{ opacity: 0, y: 28, filter: 'blur(8px)' }}
-      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-      transition={{
-        duration: 0.85,
-        delay: data.depth * 0.004,
-        ease: [0.16, 1, 0.3, 1],
-      }}
-      style={{
-        transformStyle: 'preserve-3d',
-        translateZ: data.depth,
-      }}
+    <div
+      className={`hero-card pointer-events-auto ${className}`}
+      style={{ transformStyle: 'preserve-3d' }}
     >
-      <div
-        className={`floating-card border-white/[0.06] bg-neutral-900/50 shadow-[0_2px_40px_-12px_rgba(0,0,0,0.7)] ${
-          compact ? 'max-w-none p-3.5 rounded-xl' : 'max-w-[220px] p-4 rounded-2xl'
-        } w-full`}
+      <motion.div
+        initial={{ opacity: 0, y: 22, filter: 'blur(10px)' }}
+        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+        transition={{
+          duration: 0.9,
+          delay: 0.08 + data.depth * 0.0025,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+        style={{
+          transformStyle: 'preserve-3d',
+          translateZ: data.depth * 0.35,
+        }}
       >
-        <div className="flex items-start gap-3">
-          <div
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${a.iconBg}`}
-          >
-            <Icon className={`h-4 w-4 ${a.icon}`} strokeWidth={1.75} />
-          </div>
-          <div className="min-w-0 flex-1 text-left">
-            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-stone-500">
-              {data.title}
-            </p>
-            <p className="mt-0.5 truncate text-sm font-medium text-stone-100">
-              {data.subtitle}
-            </p>
-            <p className={`mt-1 font-mono text-base font-medium tabular-nums tracking-tight ${a.metric}`}>
-              {data.metric}
-            </p>
+        <div
+          className={`floating-card border-white/[0.06] bg-neutral-900/50 shadow-[0_2px_40px_-12px_rgba(0,0,0,0.7)] ${
+            compact ? 'max-w-none p-3.5 rounded-xl' : 'max-w-[220px] p-4 rounded-2xl'
+          } w-full`}
+        >
+          <div className="flex items-start gap-3">
+            <div
+              className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${a.iconBg}`}
+            >
+              <Icon className={`h-4 w-4 ${a.icon}`} strokeWidth={1.75} />
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-stone-500">
+                {data.title}
+              </p>
+              <p className="mt-0.5 truncate text-sm font-medium text-stone-100">
+                {data.subtitle}
+              </p>
+              <p
+                className={`mt-1 font-mono text-base font-medium tabular-nums tracking-tight ${a.metric}`}
+              >
+                {data.metric}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
 
 const Hero: React.FC = () => {
-  const xlSidebar = useXlSidebar();
   const sectionRef = useRef<HTMLElement>(null);
   const headlineRef = useRef<HTMLHeadingElement>(null);
   const subheadlineRef = useRef<HTMLParagraphElement>(null);
@@ -133,39 +129,63 @@ const Hero: React.FC = () => {
       subtitle: 'Active athletes',
       metric: '12 live',
       depth: 72,
-      rotateX: 4,
-      rotateY: -8,
+      rotateX: 5,
+      rotateY: -10,
       accent: 'emerald',
+      floatClass:
+        'left-[2%] top-[16%] sm:left-[4%] sm:top-[14%] md:left-[6%] md:top-[12%] lg:left-[7%] w-[min(46vw,220px)] -rotate-2',
+      drift: {
+        from: { x: 52, y: 40, scale: 0.94 },
+        to: { x: -88, y: -72, scale: 1.02, rotateX: -4, rotateY: 14 },
+      },
     },
     {
       icon: TrendingUp,
       title: 'Load',
       subtitle: 'Week over week',
       metric: '+18%',
-      depth: 48,
-      rotateX: -3,
-      rotateY: 6,
+      depth: 56,
+      rotateX: -4,
+      rotateY: 12,
       accent: 'orange',
+      floatClass:
+        'right-[0%] top-[20%] sm:right-[2%] md:right-[5%] md:top-[18%] lg:right-[8%] w-[min(46vw,220px)] rotate-2',
+      drift: {
+        from: { x: -48, y: 36, scale: 0.94 },
+        to: { x: 92, y: -64, scale: 1.02, rotateX: 5, rotateY: -12 },
+      },
     },
     {
       icon: Users,
       title: 'Retention',
       subtitle: '90-day cohort',
       metric: '94%',
-      depth: 88,
-      rotateX: 5,
+      depth: 80,
+      rotateX: 6,
       rotateY: 8,
       accent: 'blue',
+      floatClass:
+        'left-[5%] bottom-[26%] sm:left-[7%] md:bottom-[22%] lg:left-[11%] lg:bottom-[20%] w-[min(46vw,220px)] rotate-1',
+      drift: {
+        from: { x: 44, y: -36, scale: 0.94 },
+        to: { x: -76, y: 68, scale: 1.02, rotateX: -5, rotateY: 10 },
+      },
     },
     {
       icon: CheckCircle2,
       title: 'Check-ins',
       subtitle: 'Due today',
       metric: '3 done',
-      depth: 40,
-      rotateX: -4,
-      rotateY: -6,
+      depth: 48,
+      rotateX: -5,
+      rotateY: -8,
       accent: 'stone',
+      floatClass:
+        'right-[3%] bottom-[22%] sm:right-[5%] md:bottom-[18%] lg:right-[9%] lg:bottom-[16%] w-[min(46vw,210px)] -rotate-1',
+      drift: {
+        from: { x: -40, y: -32, scale: 0.94 },
+        to: { x: 80, y: 64, scale: 1.02, rotateX: 4, rotateY: -11 },
+      },
     },
   ];
 
@@ -251,21 +271,28 @@ const Hero: React.FC = () => {
 
         const cardElements = cardsContainerRef.current?.querySelectorAll('.hero-card');
         cardElements?.forEach((card, i) => {
-          const cardData = cards[i];
-          if (!cardData) return;
+          const spec = cards[i];
+          if (!spec) return;
+          const { from, to } = spec.drift;
           gsap.fromTo(
             card,
             {
-              y: 40 + i * 24,
-              rotateX: cardData.rotateX,
-              rotateY: cardData.rotateY,
+              x: from.x,
+              y: from.y,
+              scale: from.scale,
+              rotateX: spec.rotateX,
+              rotateY: spec.rotateY,
+              force3D: true,
             },
             {
-              y: -56 - i * 18,
-              rotateX: -cardData.rotateX * 0.8,
-              rotateY: -cardData.rotateY + 5,
+              x: to.x,
+              y: to.y,
+              scale: to.scale,
+              rotateX: to.rotateX,
+              rotateY: to.rotateY,
               ease: 'none',
-              scrollTrigger: { ...scrubBase, scrub: 0.58 + i * 0.05 },
+              force3D: true,
+              scrollTrigger: { ...scrubBase, scrub: 0.52 + i * 0.045 },
             }
           );
         });
@@ -282,27 +309,26 @@ const Hero: React.FC = () => {
       ref={sectionRef}
       className="relative min-h-screen w-full overflow-hidden bg-neutral-950"
     >
-      {/* Ambient light — softer, more “pro” than loud gradients */}
       <div
         ref={bgGlowRef}
         className="pointer-events-none absolute left-1/2 top-[42%] h-[min(85vh,820px)] w-[min(90vw,920px)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.14)_0%,_transparent_68%)] blur-[100px]"
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,_rgba(255,255,255,0.04)_0%,_transparent_55%)]" />
 
-           <div className="relative z-10 mx-auto flex min-h-screen max-w-[1200px] flex-col justify-center section-padding pt-28 pb-16 md:pt-32">
-        <div
-          ref={cardsContainerRef}
-          className="relative flex flex-col items-stretch gap-12 xl:flex-row xl:items-center xl:justify-center xl:gap-8 2xl:gap-10"
-        >
-          {xlSidebar ? (
-            <div className="flex w-[min(100%,200px)] shrink-0 flex-col items-end justify-center gap-5 pr-1 xl:order-1">
-              <HeroCard data={cards[0]} />
-              <HeroCard data={cards[1]} />
-            </div>
-          ) : null}
+      <div className="relative z-10 mx-auto min-h-screen max-w-[1200px] section-padding pt-28 pb-16 md:pt-32">
+        <div className="relative mx-auto flex min-h-[min(88vh,860px)] w-full max-w-5xl flex-col md:min-h-[min(90vh,920px)]">
+          {/* Orbit layer: cards float around copy; md+ only */}
+          <div
+            ref={cardsContainerRef}
+            className="perspective-container pointer-events-none absolute inset-0 z-[1] hidden md:block"
+            style={{ perspective: '1400px' }}
+          >
+            {cards.map((c) => (
+              <HeroCard key={c.title} data={c} className={`absolute z-[1] ${c.floatClass}`} />
+            ))}
+          </div>
 
-          {/* Center — typographic lockup; mobile: order-1, xl: between side rails */}
-          <div className="order-1 flex flex-1 flex-col items-center text-center xl:order-2 xl:max-w-[36rem] xl:flex-none">
+          <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center px-2 py-6 text-center sm:px-4 md:py-0">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -369,18 +395,12 @@ const Hero: React.FC = () => {
             </motion.div>
           </div>
 
-          {xlSidebar ? (
-            <div className="flex w-[min(100%,200px)] shrink-0 flex-col items-start justify-center gap-5 pl-1 xl:order-3">
-              <HeroCard data={cards[2]} />
-              <HeroCard data={cards[3]} />
-            </div>
-          ) : (
-            <div className="order-2 mx-auto grid w-full max-w-md grid-cols-2 gap-3 sm:max-w-lg">
-              {cards.map((c) => (
-                <HeroCard key={c.title} data={c} compact />
-              ))}
-            </div>
-          )}
+          {/* Mobile: compact grid under CTAs */}
+          <div className="relative z-[2] mx-auto mt-2 grid w-full max-w-md grid-cols-2 gap-3 pb-6 sm:max-w-lg md:hidden">
+            {cards.map((c) => (
+              <HeroCard key={c.title} data={c} compact />
+            ))}
+          </div>
         </div>
       </div>
     </section>
