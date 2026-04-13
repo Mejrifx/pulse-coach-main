@@ -307,28 +307,28 @@ const Hero: React.FC = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen w-full overflow-hidden bg-neutral-950"
+      className="relative min-h-[100dvh] w-full overflow-hidden bg-neutral-950"
     >
       <div
         ref={bgGlowRef}
-        className="pointer-events-none absolute left-1/2 top-[42%] h-[min(85vh,820px)] w-[min(90vw,920px)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.14)_0%,_transparent_68%)] blur-[100px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-[min(85vh,820px)] w-[min(90vw,920px)] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[radial-gradient(ellipse_at_center,_rgba(16,185,129,0.14)_0%,_transparent_68%)] blur-[100px]"
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,_rgba(255,255,255,0.04)_0%,_transparent_55%)]" />
 
-      <div className="relative z-10 mx-auto min-h-screen max-w-[1200px] section-padding pt-28 pb-16 md:pt-32">
-        <div className="relative mx-auto flex min-h-[min(88vh,860px)] w-full max-w-5xl flex-col md:min-h-[min(90vh,920px)]">
-          {/* Orbit layer: cards float around copy; md+ only */}
-          <div
-            ref={cardsContainerRef}
-            className="perspective-container pointer-events-none absolute inset-0 z-[1] hidden md:block"
-            style={{ perspective: '1400px' }}
-          >
-            {cards.map((c) => (
-              <HeroCard key={c.title} data={c} className={`absolute z-[1] ${c.floatClass}`} />
-            ))}
-          </div>
+      {/* Single full-viewport column: justify-center vertically centers the hero block in the padded content box (fixes “sitting low” from nested min-heights + flex-1). */}
+      <div className="relative z-10 mx-auto box-border flex min-h-[100dvh] w-full max-w-[1200px] flex-col justify-center section-padding pb-10 pt-24 md:pb-14 md:pt-28">
+        <div
+          ref={cardsContainerRef}
+          className="perspective-container pointer-events-none absolute inset-0 z-[1] hidden md:block"
+          style={{ perspective: '1400px' }}
+        >
+          {cards.map((c) => (
+            <HeroCard key={c.title} data={c} className={`absolute z-[1] ${c.floatClass}`} />
+          ))}
+        </div>
 
-          <div className="relative z-10 flex w-full flex-1 flex-col items-center justify-center px-2 py-6 text-center sm:px-4 md:py-0">
+        <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center px-2 text-center sm:px-4">
+          <div className="flex w-full flex-col items-center">
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
@@ -396,7 +396,7 @@ const Hero: React.FC = () => {
           </div>
 
           {/* Mobile: compact grid under CTAs */}
-          <div className="relative z-[2] mx-auto mt-2 grid w-full max-w-md grid-cols-2 gap-3 pb-6 sm:max-w-lg md:hidden">
+          <div className="relative z-[2] mt-8 grid w-full max-w-md grid-cols-2 gap-3 sm:max-w-lg md:hidden">
             {cards.map((c) => (
               <HeroCard key={c.title} data={c} compact />
             ))}
