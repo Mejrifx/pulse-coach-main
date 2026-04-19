@@ -1,7 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Info, Save } from 'lucide-react';
 import { TRAINING_PROGRAM, PROGRAM_NOTES } from '@/data/trainingProgram';
+import { useWorkoutHistory } from '@/hooks/useWorkoutHistory';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
+import { WorkoutHistoryPanel } from '@/components/workout/WorkoutHistoryPanel';
 import { formatLocalDate } from '@/lib/localDate';
 import type { DayKey } from '@/types/workout';
 
@@ -16,8 +18,21 @@ const DAY_TABS: { key: DayKey; label: string }[] = [
 export function WorkoutTracker() {
   const [sessionDate, setSessionDate] = useState(() => formatLocalDate(new Date()));
   const [activeDay, setActiveDay] = useState<DayKey>('day1');
+  const [historyKey, setHistoryKey] = useState(0);
+  const bumpHistory = useCallback(() => setHistoryKey((k) => k + 1), []);
 
-  const { values, setCell, loading, saving, save } = useWorkoutSession(activeDay, sessionDate);
+  const { sessions: historySessions, loading: historyLoading } = useWorkoutHistory(historyKey);
+
+  const { values, setCell, loading, saving, save } = useWorkoutSession(
+    activeDay,
+    sessionDate,
+    { onSaved: bumpHistory },
+  );
+
+  const openSession = useCallback((date: string, day: DayKey) => {
+    setSessionDate(date);
+    setActiveDay(day);
+  }, []);
 
   const dayDef = useMemo(
     () => TRAINING_PROGRAM.find((d) => d.key === activeDay),
@@ -26,6 +41,14 @@ export function WorkoutTracker() {
 
   return (
     <div className="space-y-8">
+      <WorkoutHistoryPanel
+        sessions={historySessions}
+        loading={historyLoading}
+        activeDate={sessionDate}
+        activeDay={activeDay}
+        onOpen={openSession}
+      />
+
       <section className="rounded-2xl border border-stone-800 bg-neutral-900/40 p-5 md:p-6">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>

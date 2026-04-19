@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,8 +11,21 @@ function cellKey(exerciseId: string, setIndex: number) {
   return `${exerciseId}-${setIndex}`;
 }
 
-export function useWorkoutSession(dayKey: DayKey, sessionDate: string) {
+type SessionOptions = {
+  /** Called after a successful save (after reload). Use to refresh history lists. */
+  onSaved?: () => void;
+};
+
+export function useWorkoutSession(
+  dayKey: DayKey,
+  sessionDate: string,
+  options?: SessionOptions,
+) {
   const { user } = useAuth();
+  const onSavedRef = useRef(options?.onSaved);
+  useEffect(() => {
+    onSavedRef.current = options?.onSaved;
+  }, [options?.onSaved]);
   const [values, setValues] = useState<Record<string, SetInput>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -144,6 +157,7 @@ export function useWorkoutSession(dayKey: DayKey, sessionDate: string) {
 
       toast.success('Workout saved');
       await load();
+      onSavedRef.current?.();
     } catch (e) {
       console.error(e);
       toast.error(
