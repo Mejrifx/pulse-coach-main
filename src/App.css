@@ -35,20 +35,24 @@ section {
   background: hsl(var(--stone-700));
 }
 
-/* Focus styles */
+/* Focus styles — skip link and interactive affordance (do not blanket * transition: breaks Lenis/GSAP) */
 *:focus-visible {
   outline: 2px solid hsl(var(--emerald));
   outline-offset: 2px;
 }
 
-/* Reduced motion support */
+button:focus-visible,
+a:focus-visible {
+  outline-offset: 3px;
+}
+
+/* Reduced motion: only CSS-driven decorative animations (not scroll/GSAP) */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+  .animate-float,
+  .animate-float-slow,
+  .animate-float-fast,
+  .animate-pulse-glow {
+    animation: none !important;
   }
 }
 

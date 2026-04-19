@@ -11,6 +11,7 @@ import {
   Linkedin,
   Mail,
 } from 'lucide-react';
+import { toast } from 'sonner';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -41,7 +42,7 @@ const FooterCTA: React.FC = () => {
                 trigger: section,
                 start: 'top bottom',
                 end: 'bottom top',
-                scrub: 0.55,
+                scrub: true,
               },
             }
           );
@@ -94,8 +95,12 @@ const FooterCTA: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    alert(`Thanks for signing up! We'll be in touch at ${email}`);
+    const trimmed = email.trim();
+    if (!trimmed) {
+      toast.error('Please enter your email.');
+      return;
+    }
+    toast.success(`You're on the list — we'll reach you at ${trimmed}.`);
     setEmail('');
   };
 

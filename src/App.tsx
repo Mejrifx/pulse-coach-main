@@ -1,95 +1,49 @@
-import { useEffect } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { Toaster } from 'sonner';
 
-// Sections
-import Navigation from './sections/Navigation';
-import Hero from './sections/Hero';
-import ProblemSolution from './sections/ProblemSolution';
-import Features from './sections/Features';
-import HorizontalShowcase from './sections/HorizontalShowcase';
-import Stats from './sections/Stats';
-import Pricing from './sections/Pricing';
-import FooterCTA from './sections/FooterCTA';
+import { AuthProvider } from '@/contexts/AuthContext';
+import { GuestOnlyRoute } from '@/components/GuestOnlyRoute';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import LandingPage from '@/pages/LandingPage';
+import LoginPage from '@/pages/LoginPage';
+import DashboardPage from '@/pages/DashboardPage';
 
-import './App.css';
-
-// Register GSAP plugins
-gsap.registerPlugin(ScrollTrigger);
-
-function App() {
-  useEffect(() => {
-    gsap.defaults({
-      ease: 'power2.out',
-      duration: 0.8,
-    });
-
-    ScrollTrigger.defaults({
-      anticipatePin: 1,
-    });
-
-    ScrollTrigger.config({
-      ignoreMobileResize: true,
-      autoRefreshEvents: 'visibilitychange,DOMContentLoaded,load',
-    });
-
-    ScrollTrigger.refresh();
-
-    let resizeTimer: ReturnType<typeof setTimeout>;
-    const onResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => {
-        ScrollTrigger.refresh();
-      }, 200);
-    };
-    window.addEventListener('resize', onResize);
-
-    const onFonts = () => ScrollTrigger.refresh();
-    void document.fonts.ready.then(onFonts);
-
-    return () => {
-      clearTimeout(resizeTimer);
-      window.removeEventListener('resize', onResize);
-      ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-    };
-  }, []);
-
+export default function App() {
   return (
-    <div className="relative min-h-screen bg-neutral-950">
-      {/* Noise texture overlay */}
-      <div className="noise-overlay" />
-
-      {/* Vignette effect */}
-      <div className="vignette" />
-
-      {/* Navigation */}
-      <Navigation />
-
-      {/* Main content */}
-      <main className="relative">
-        {/* Hero Section - 3D Theater with floating cards */}
-        <Hero />
-
-        {/* Problem/Solution - Pinned split-screen */}
-        <ProblemSolution />
-
-        {/* Features Bento - 3D grid reveal */}
-        <Features />
-
-        {/* Horizontal Showcase - Signature horizontal scroll */}
-        <HorizontalShowcase />
-
-        {/* Stats/Social Proof - Counter animation */}
-        <Stats />
-
-        {/* Pricing - 3D flip-in cards */}
-        <Pricing />
-
-        {/* Footer CTA - Immersive zoom exit */}
-        <FooterCTA />
-      </main>
-    </div>
+    <BrowserRouter>
+      <AuthProvider>
+        <Toaster
+          position="bottom-center"
+          theme="dark"
+          richColors
+          closeButton
+          toastOptions={{
+            classNames: {
+              toast: 'border border-stone-800 bg-neutral-900 text-stone-100',
+            },
+          }}
+        />
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route
+            path="/login"
+            element={
+              <GuestOnlyRoute>
+                <LoginPage />
+              </GuestOnlyRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
-
-export default App;

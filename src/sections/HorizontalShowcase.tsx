@@ -113,8 +113,8 @@ const HorizontalShowcase: React.FC = () => {
             start: 'top top',
             end: () => `+=${scrollDistance() * 1.32}`,
             pin: true,
-            scrub: 0.62,
-            anticipatePin: 1,
+            scrub: true,
+            anticipatePin: 0,
             invalidateOnRefresh: true,
           },
         });
@@ -128,7 +128,7 @@ const HorizontalShowcase: React.FC = () => {
               trigger: section,
               start: 'top top',
               end: () => `+=${scrollDistance() * 1.32}`,
-              scrub: 0.62,
+              scrub: true,
               invalidateOnRefresh: true,
             },
           });
@@ -147,7 +147,7 @@ const HorizontalShowcase: React.FC = () => {
                 containerAnimation: scrollTween,
                 start: 'left 85%',
                 end: 'right 15%',
-                scrub: 0.62,
+                scrub: true,
                 horizontal: true,
               },
             }
@@ -163,7 +163,9 @@ const HorizontalShowcase: React.FC = () => {
 
   return (
     <section
+      id="platform"
       ref={sectionRef}
+      aria-labelledby="platform-heading"
       className="relative w-full h-screen bg-neutral-950 overflow-hidden"
     >
       {/* Background text */}
@@ -204,7 +206,10 @@ const HorizontalShowcase: React.FC = () => {
               </span>
             </div>
 
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-stone-100 mb-6">
+            <h2
+              id="platform-heading"
+              className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-stone-100 mb-6"
+            >
               Walk through
               <br />
               <span className="text-gradient-emerald">the experience.</span>
@@ -288,7 +293,10 @@ const HorizontalShowcase: React.FC = () => {
       </div>
 
       {/* Scroll indicator */}
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 text-stone-500 text-sm">
+      <div
+        className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-2 text-stone-500 text-sm"
+        aria-hidden
+      >
         <div className="w-8 h-1 bg-stone-800 rounded-full overflow-hidden">
           <div className="w-full h-full bg-emerald-500 animate-pulse" />
         </div>

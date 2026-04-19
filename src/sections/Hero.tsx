@@ -2,6 +2,7 @@ import React, { useRef, useLayoutEffect } from 'react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { motion } from 'framer-motion';
+import { scrollToSection as scrollToAnchor } from '../lib/scrollToSection';
 import {
   TrendingUp,
   Activity,
@@ -197,20 +198,13 @@ const Hero: React.FC = () => {
 
     mm.add('(prefers-reduced-motion: no-preference)', () => {
       const ctx = gsap.context(() => {
-        const scrollEnd = '+=128%';
+        /* No pin: pinned hero forced ~1.3× viewport of “dead” scroll before the page moved — felt broken.
+         * Scrub across the section’s natural pass through the viewport instead. */
         const scrubBase = {
           trigger: section,
           start: 'top top',
-          end: scrollEnd,
+          end: 'bottom top',
         };
-
-        ScrollTrigger.create({
-          trigger: section,
-          start: 'top top',
-          end: scrollEnd,
-          pin: true,
-          pinSpacing: true,
-        });
 
         if (bgGlowRef.current) {
           gsap.fromTo(
@@ -220,7 +214,8 @@ const Hero: React.FC = () => {
               yPercent: 20,
               scale: 1.1,
               ease: 'none',
-              scrollTrigger: { ...scrubBase, scrub: 0.55 },
+              /* scrub: number = smoothed/laggy (“butter”); true = locked to scroll position */
+              scrollTrigger: { ...scrubBase, scrub: true },
             }
           );
         }
@@ -233,7 +228,7 @@ const Hero: React.FC = () => {
               y: -140,
               opacity: 0.2,
               ease: 'none',
-              scrollTrigger: { ...scrubBase, scrub: 0.55 },
+              scrollTrigger: { ...scrubBase, scrub: true },
             }
           );
         }
@@ -246,7 +241,7 @@ const Hero: React.FC = () => {
               y: -100,
               opacity: 0.15,
               ease: 'none',
-              scrollTrigger: { ...scrubBase, scrub: 0.68 },
+              scrollTrigger: { ...scrubBase, scrub: true },
             }
           );
         }
@@ -262,8 +257,8 @@ const Hero: React.FC = () => {
               scrollTrigger: {
                 trigger: section,
                 start: 'top top',
-                end: '+=72%',
-                scrub: 0.45,
+                end: 'center top',
+                scrub: true,
               },
             }
           );
@@ -292,7 +287,7 @@ const Hero: React.FC = () => {
               rotateY: to.rotateY,
               ease: 'none',
               force3D: true,
-              scrollTrigger: { ...scrubBase, scrub: 0.52 + i * 0.045 },
+              scrollTrigger: { ...scrubBase, scrub: true },
             }
           );
         });
@@ -381,14 +376,16 @@ const Hero: React.FC = () => {
             >
               <button
                 type="button"
-                className="inline-flex h-12 items-center justify-center gap-2 rounded-full bg-emerald-500 px-7 text-[15px] font-semibold text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset,0_8px_32px_-8px_rgba(16,185,129,0.45)] transition-transform duration-200 hover:bg-emerald-400 active:scale-[0.98]"
+                onClick={() => scrollToAnchor('#pricing')}
+                className="inline-flex h-12 min-h-[44px] items-center justify-center gap-2 rounded-full bg-emerald-500 px-7 text-[15px] font-semibold text-white shadow-[0_0_0_1px_rgba(255,255,255,0.08)_inset,0_8px_32px_-8px_rgba(16,185,129,0.45)] transition-transform duration-200 hover:bg-emerald-400 active:scale-[0.98] outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-300"
               >
                 Start free trial
-                <ArrowRight className="h-4 w-4 opacity-90" strokeWidth={2} />
+                <ArrowRight className="h-4 w-4 opacity-90" aria-hidden strokeWidth={2} />
               </button>
               <button
                 type="button"
-                className="inline-flex h-12 items-center justify-center rounded-full border border-white/[0.12] bg-white/[0.03] px-7 text-[15px] font-medium text-stone-200 backdrop-blur-sm transition-colors hover:border-white/[0.2] hover:bg-white/[0.06]"
+                onClick={() => scrollToAnchor('#platform')}
+                className="inline-flex h-12 min-h-[44px] items-center justify-center rounded-full border border-white/[0.12] bg-white/[0.03] px-7 text-[15px] font-medium text-stone-200 backdrop-blur-sm transition-colors hover:border-white/[0.2] hover:bg-white/[0.06] outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-stone-200"
               >
                 Watch film
               </button>

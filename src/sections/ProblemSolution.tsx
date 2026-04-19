@@ -120,7 +120,7 @@ const ProblemSolution: React.FC = () => {
                 trigger: section,
                 start: 'top 58%',
                 end: 'bottom 38%',
-                scrub: 0.48 + i * 0.1,
+                scrub: true,
               },
             }
           );
