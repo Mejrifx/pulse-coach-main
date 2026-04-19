@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
-import { LogOut, Zap } from 'lucide-react';
+import { Dumbbell, LogOut, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { WorkoutTracker } from '@/components/workout/WorkoutTracker';
 
 export default function DashboardPage() {
   const { user, signOut } = useAuth();
@@ -34,16 +35,26 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-        <h1 className="text-2xl font-semibold text-stone-50">Welcome back</h1>
-        <p className="mt-2 max-w-xl text-stone-400">
-          You’re signed in. The coaching workspace will live here — start by wiring your programs
-          and clients next.
-        </p>
-        <div className="mt-10 rounded-2xl border border-dashed border-stone-700 bg-neutral-900/40 p-12 text-center text-stone-500">
-          Platform modules coming soon.
+      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 md:py-10">
+        <div className="mb-8 flex flex-col gap-2 border-b border-stone-800/80 pb-8 md:flex-row md:items-end md:justify-between">
+          <div>
+            <div className="flex items-center gap-2 text-emerald-400/90">
+              <Dumbbell className="h-5 w-5" aria-hidden />
+              <span className="text-xs font-semibold uppercase tracking-wider">Training</span>
+            </div>
+            <h1 className="mt-2 text-2xl font-semibold text-stone-50 md:text-3xl">
+              Workout log
+            </h1>
+            <p className="mt-2 max-w-2xl text-stone-400">
+              4-day split: track weight and reps every session. Data is saved to your Supabase
+              account (run the SQL migration once if save fails).
+            </p>
+          </div>
         </div>
-        <p className="mt-8 text-sm text-stone-600">
+
+        <WorkoutTracker />
+
+        <p className="mt-12 text-sm text-stone-600">
           <Link to="/" className="text-emerald-500/90 hover:text-emerald-400">
             ← Marketing site
           </Link>
