@@ -2,7 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Zap } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { isSupabaseConfigured, supabase } from '@/lib/supabaseClient';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -19,6 +19,7 @@ export default function LoginPage() {
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
+    if (!supabase) return;
     setError(null);
     setBusy(true);
     const trimmed = email.trim();
@@ -59,6 +60,48 @@ export default function LoginPage() {
     setPassword('');
     toast.success(
       'Account created. Confirm your email if required by your project, then sign in.',
+    );
+  }
+
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="min-h-[100dvh] bg-neutral-950 text-stone-100 flex flex-col">
+        <header className="border-b border-stone-800/80 px-4 py-4">
+          <div className="mx-auto flex max-w-lg items-center justify-between">
+            <Link
+              to="/"
+              className="flex items-center gap-2 rounded-lg outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500"
+            >
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 shadow-lg shadow-emerald-500/20">
+                <Zap className="h-4 w-4 text-white" aria-hidden />
+              </div>
+              <span className="text-lg font-bold tracking-tight">PULSE</span>
+            </Link>
+            <Link
+              to="/"
+              className="text-sm text-stone-400 hover:text-stone-200 transition-colors"
+            >
+              Back to site
+            </Link>
+          </div>
+        </header>
+        <main className="mx-auto flex max-w-md flex-1 flex-col justify-center px-4 py-12">
+          <div className="rounded-2xl border border-amber-500/30 bg-amber-950/40 p-6 text-amber-100/95">
+            <h1 className="text-lg font-semibold text-amber-50">Supabase env not set</h1>
+            <p className="mt-2 text-sm leading-relaxed text-amber-100/80">
+              This build has no <code className="rounded bg-black/30 px-1">VITE_SUPABASE_URL</code>{' '}
+              or <code className="rounded bg-black/30 px-1">VITE_SUPABASE_ANON_KEY</code>. Add
+              them in your host (Vercel, Netlify, etc.) and redeploy — Vite bakes these in at{' '}
+              <strong>build</strong> time, not runtime.
+            </p>
+            <p className="mt-4 text-sm text-amber-100/70">
+              Locally, copy <code className="rounded bg-black/30 px-1">.env.example</code> to{' '}
+              <code className="rounded bg-black/30 px-1">.env</code> and run{' '}
+              <code className="rounded bg-black/30 px-1">npm run build</code> again.
+            </p>
+          </div>
+        </main>
+      </div>
     );
   }
 

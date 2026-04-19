@@ -24,6 +24,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!supabase) {
+      setSession(null);
+      setLoading(false);
+      return;
+    }
+
     let mounted = true;
 
     void supabase.auth.getSession().then(({ data: { session: s } }) => {
@@ -46,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    if (supabase) await supabase.auth.signOut();
   }, []);
 
   const value = useMemo<AuthContextValue>(
