@@ -5,6 +5,8 @@ dist
 .env
 .env.*
 coverage
+__pycache__/
+*.pyc
 *.log
 .vscode/*
 !.vscode/extensions.json
