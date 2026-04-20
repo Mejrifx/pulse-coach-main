@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, History, Info, Save } from 'lucide-react';
 import { TRAINING_PROGRAM, PROGRAM_NOTES } from '@/data/trainingProgram';
 import { useWorkoutHistory } from '@/hooks/useWorkoutHistory';
 import { usePreviousWorkout } from '@/hooks/usePreviousWorkout';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
+import { useWorkoutSaveBridge } from '@/contexts/WorkoutSaveBridgeContext';
 import { formatLocalDate, formatSessionDateLabel } from '@/lib/localDate';
 import { getDayByKey } from '@/data/trainingProgram';
 import type { DayKey } from '@/types/workout';
@@ -17,6 +18,7 @@ const DAY_TABS: { key: DayKey; label: string }[] = [
 ];
 
 export function WorkoutTracker() {
+  const { register } = useWorkoutSaveBridge();
   const [sessionDate, setSessionDate] = useState(() => formatLocalDate(new Date()));
   const [activeDay, setActiveDay] = useState<DayKey>('day1');
   const [historyKey, setHistoryKey] = useState(0);
@@ -29,6 +31,15 @@ export function WorkoutTracker() {
     sessionDate,
     { onSaved: bumpHistory },
   );
+
+  useEffect(() => {
+    register({
+      save: () => void save(),
+      saving,
+      loading,
+    });
+    return () => register(null);
+  }, [register, save, saving, loading]);
 
   const openSession = useCallback((date: string, day: DayKey) => {
     setSessionDate(date);

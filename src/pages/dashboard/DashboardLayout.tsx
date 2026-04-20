@@ -1,14 +1,18 @@
-import { Link, NavLink, Outlet } from 'react-router-dom';
-import { Dumbbell, FlaskConical, LogOut, Zap } from 'lucide-react';
+import { Link, NavLink, Outlet, useMatch } from 'react-router-dom';
+import { Dumbbell, FlaskConical, LogOut, Save, Zap } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { WorkoutSaveBridgeProvider, useWorkoutSaveBridge } from '@/contexts/WorkoutSaveBridgeContext';
 
 const navItems = [
   { to: '/dashboard/supplements', label: 'Supplements', icon: FlaskConical },
   { to: '/dashboard/workouts', label: 'Workouts', icon: Dumbbell },
 ] as const;
 
-export default function DashboardLayout() {
+function DashboardLayoutInner() {
   const { user, signOut } = useAuth();
+  const { handlers } = useWorkoutSaveBridge();
+  const onWorkouts = Boolean(useMatch({ path: '/dashboard/workouts', end: true }));
+  const showQuickSave = onWorkouts && handlers;
 
   return (
     <div className="min-h-[100dvh] bg-neutral-950 text-stone-100">
@@ -29,6 +33,18 @@ export default function DashboardLayout() {
               <span className="hidden max-w-[220px] truncate text-sm text-stone-400 sm:inline">
                 {user?.email}
               </span>
+              {showQuickSave ? (
+                <button
+                  type="button"
+                  onClick={() => void handlers.save()}
+                  disabled={handlers.loading || handlers.saving}
+                  aria-label={handlers.saving ? 'Saving workout' : 'Save workout'}
+                  className="touch-manipulation inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 rounded-lg border border-emerald-500/35 bg-emerald-500/10 px-2.5 py-2 text-xs font-semibold text-emerald-200 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50 sm:px-3"
+                >
+                  <Save className="h-4 w-4 shrink-0" aria-hidden />
+                  <span className="hidden sm:inline">{handlers.saving ? 'Saving…' : 'Save'}</span>
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => void signOut()}
@@ -83,6 +99,14 @@ export default function DashboardLayout() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function DashboardLayout() {
+  return (
+    <WorkoutSaveBridgeProvider>
+      <DashboardLayoutInner />
+    </WorkoutSaveBridgeProvider>
   );
 }
 
