@@ -7,7 +7,9 @@ import { GuestOnlyRoute } from '@/components/GuestOnlyRoute';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import LandingPage from '@/pages/LandingPage';
 import LoginPage from '@/pages/LoginPage';
-import DashboardPage from '@/pages/DashboardPage';
+import DashboardLayout from '@/pages/dashboard/DashboardLayout';
+import WorkoutsPage from '@/pages/dashboard/WorkoutsPage';
+import SupplementsPage from '@/pages/dashboard/SupplementsPage';
 
 export default function App() {
   return (
@@ -45,13 +47,17 @@ export default function App() {
             }
           />
           <Route
-            path="/dashboard"
+            path="/dashboard/*"
             element={
               <ProtectedRoute>
-                <DashboardPage />
+                <DashboardLayout />
               </ProtectedRoute>
             }
-          />
+          >
+            <Route index element={<Navigate to="workouts" replace />} />
+            <Route path="workouts" element={<WorkoutsPage />} />
+            <Route path="supplements" element={<SupplementsPage />} />
+          </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
