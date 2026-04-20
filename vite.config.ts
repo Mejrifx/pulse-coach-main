@@ -5,7 +5,9 @@ import { inspectAttr } from 'kimi-plugin-inspect-react'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: './',
+  // Root-relative assets so nested routes (e.g. /dashboard/workouts) load JS/CSS on refresh.
+  // Relative base ('./') breaks on deep paths in static hosts (Netlify).
+  base: '/',
   plugins: [inspectAttr(), react()],
   resolve: {
     alias: {

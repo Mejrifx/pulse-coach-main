@@ -1,7 +1,11 @@
+import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useMatch } from 'react-router-dom';
-import { Dumbbell, FlaskConical, LogOut, Save, Zap } from 'lucide-react';
+import { Dumbbell, FlaskConical, LogOut, Save, Timer, Zap } from 'lucide-react';
+import { RestTimerDialog } from '@/components/workout/RestTimerDialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { WorkoutSaveBridgeProvider, useWorkoutSaveBridge } from '@/contexts/WorkoutSaveBridgeContext';
+import { useRestTimer } from '@/hooks/useRestTimer';
+import { cn } from '@/lib/utils';
 
 const navItems = [
   { to: '/dashboard/supplements', label: 'Supplements', icon: FlaskConical },
@@ -11,8 +15,14 @@ const navItems = [
 function DashboardLayoutInner() {
   const { user, signOut } = useAuth();
   const { handlers } = useWorkoutSaveBridge();
+  const restTimer = useRestTimer();
+  const [restOpen, setRestOpen] = useState(false);
   const onWorkouts = Boolean(useMatch({ path: '/dashboard/workouts', end: true }));
   const showQuickSave = onWorkouts && handlers;
+
+  useEffect(() => {
+    if (!onWorkouts) setRestOpen(false);
+  }, [onWorkouts]);
 
   return (
     <div className="min-h-[100dvh] bg-neutral-950 text-stone-100">
@@ -33,6 +43,20 @@ function DashboardLayoutInner() {
               <span className="hidden max-w-[220px] truncate text-sm text-stone-400 sm:inline">
                 {user?.email}
               </span>
+              {onWorkouts ? (
+                <button
+                  type="button"
+                  onClick={() => setRestOpen(true)}
+                  aria-label="Rest timer between sets"
+                  className={cn(
+                    'touch-manipulation inline-flex min-h-[40px] min-w-[40px] items-center justify-center gap-1.5 rounded-lg border border-amber-500/35 bg-amber-500/10 px-2.5 py-2 text-xs font-semibold text-amber-100 transition-colors hover:bg-amber-500/20 sm:px-3',
+                    restTimer.isRunning && 'ring-2 ring-amber-400/35 ring-offset-2 ring-offset-neutral-950',
+                  )}
+                >
+                  <Timer className="h-4 w-4 shrink-0" aria-hidden />
+                  <span className="hidden sm:inline">Rest</span>
+                </button>
+              ) : null}
               {showQuickSave ? (
                 <button
                   type="button"
@@ -86,6 +110,8 @@ function DashboardLayoutInner() {
           </div>
         </nav>
       </header>
+
+      <RestTimerDialog open={restOpen} onOpenChange={setRestOpen} timer={restTimer} />
 
       <main className="mx-auto w-full max-w-6xl px-4 py-6 md:py-8">
         <Outlet />
