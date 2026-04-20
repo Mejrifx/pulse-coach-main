@@ -27,12 +27,14 @@ export function useWorkoutSession(
     onSavedRef.current = options?.onSaved;
   }, [options?.onSaved]);
   const [values, setValues] = useState<Record<string, SetInput>>({});
+  const [isSavedSession, setIsSavedSession] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     if (!supabase || !user) {
       setValues({});
+      setIsSavedSession(false);
       setLoading(false);
       return;
     }
@@ -53,10 +55,12 @@ export function useWorkoutSession(
 
     if (!session) {
       setValues({});
+      setIsSavedSession(false);
       setLoading(false);
       return;
     }
 
+    setIsSavedSession(true);
     const { data: rows, error: rErr } = await supabase
       .from('workout_sets')
       .select('exercise_id, set_index, weight_kg, reps')
@@ -157,6 +161,7 @@ export function useWorkoutSession(
 
       toast.success('Workout saved');
       await load();
+      setIsSavedSession(true);
       onSavedRef.current?.();
     } catch (e) {
       console.error(e);
@@ -168,5 +173,5 @@ export function useWorkoutSession(
     }
   }, [user, dayKey, sessionDate, values, load]);
 
-  return { values, setCell, loading, saving, save, reload: load };
+  return { values, setCell, isSavedSession, loading, saving, save, reload: load };
 }

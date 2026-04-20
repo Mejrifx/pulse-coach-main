@@ -47,7 +47,7 @@ export default function DashboardPage() {
             </h1>
             <p className="mt-2 max-w-2xl text-stone-400">
               4-day split: track weight and reps every session. Saved rows appear under{' '}
-              <strong className="text-stone-300">Saved workouts</strong> (tables{' '}
+              <strong className="text-stone-300">Past workouts</strong> (tables{' '}
               <code className="rounded bg-neutral-900 px-1 text-stone-500">workout_sessions</code>,{' '}
               <code className="rounded bg-neutral-900 px-1 text-stone-500">workout_sets</code>
               ).

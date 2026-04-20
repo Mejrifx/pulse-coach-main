@@ -53,6 +53,12 @@
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 
+  /* Reduce mobile tap delay on interactive elements */
+  button,
+  a {
+    touch-action: manipulation;
+  }
+
   /* Anchor targets clear fixed nav (WCAG 2.4.3) */
   #main-content {
     scroll-margin-top: 6.5rem;
