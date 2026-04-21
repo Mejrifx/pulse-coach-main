@@ -27,6 +27,7 @@ export function WorkoutTracker() {
   
   const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set());
   const [currentExerciseId, setCurrentExerciseId] = useState<string | null>(null);
+  const [expandedExercises, setExpandedExercises] = useState<Set<string>>(new Set());
   const exerciseRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const { sessions: historySessions, loading: historyLoading } = useWorkoutHistory(historyKey);
@@ -56,6 +57,7 @@ export function WorkoutTracker() {
     setActiveDay(day);
     setCompletedExercises(new Set());
     setCurrentExerciseId(null);
+    setExpandedExercises(new Set());
   }, []);
 
   const toggleExerciseComplete = useCallback((exerciseId: string) => {
@@ -63,8 +65,20 @@ export function WorkoutTracker() {
       const next = new Set(prev);
       if (next.has(exerciseId)) {
         next.delete(exerciseId);
+        // When uncompleting, expand it
+        setExpandedExercises((exp) => {
+          const nextExp = new Set(exp);
+          nextExp.add(exerciseId);
+          return nextExp;
+        });
       } else {
         next.add(exerciseId);
+        // When completing, collapse it
+        setExpandedExercises((exp) => {
+          const nextExp = new Set(exp);
+          nextExp.delete(exerciseId);
+          return nextExp;
+        });
         // Auto-scroll to next incomplete after a brief delay
         setTimeout(() => {
           const nextIncomplete = dayDef?.exercises.find(
@@ -82,6 +96,18 @@ export function WorkoutTracker() {
       return next;
     });
   }, [dayDef]);
+
+  const toggleExpanded = useCallback((exerciseId: string) => {
+    setExpandedExercises((prev) => {
+      const next = new Set(prev);
+      if (next.has(exerciseId)) {
+        next.delete(exerciseId);
+      } else {
+        next.add(exerciseId);
+      }
+      return next;
+    });
+  }, []);
 
   const scrollToExercise = useCallback((exerciseId: string) => {
     setCurrentExerciseId(exerciseId);
@@ -283,7 +309,7 @@ export function WorkoutTracker() {
             {dayDef.exercises.map((ex) => {
               const isCompleted = completedExercises.has(ex.id);
               const isCurrent = currentExerciseId === ex.id;
-              const [isExpanded, setIsExpanded] = useState(!isCompleted);
+              const isExpanded = expandedExercises.has(ex.id) || !isCompleted;
 
               return (
                 <article
@@ -333,7 +359,7 @@ export function WorkoutTracker() {
                     {isCompleted && (
                       <button
                         type="button"
-                        onClick={() => setIsExpanded(!isExpanded)}
+                        onClick={() => toggleExpanded(ex.id)}
                         className="touch-manipulation flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-stone-500 hover:bg-stone-800/50 hover:text-stone-300"
                         aria-label={isExpanded ? 'Collapse exercise' : 'Expand exercise'}
                       >
@@ -346,7 +372,7 @@ export function WorkoutTracker() {
                     )}
                   </div>
 
-                  {(!isCompleted || isExpanded) && (
+                  {isExpanded && (
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                       {Array.from({ length: ex.sets }, (_, i) => {
                         const k = `${ex.id}-${i}`;
