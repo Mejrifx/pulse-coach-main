@@ -1,0 +1,23 @@
+{
+  "name": "Pulse",
+  "short_name": "Pulse",
+  "description": "Pulse — Coaching, elevated",
+  "start_url": "/dashboard/workouts",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "/Pulse%20Logo%20Icon.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/Pulse%20Logo%20Icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
+
