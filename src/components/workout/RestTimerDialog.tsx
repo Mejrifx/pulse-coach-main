@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from 'react';
-import { Check, Pause, Play, RotateCcw, Timer } from 'lucide-react';
+import { BellOff, Check, Pause, Play, RotateCcw, Timer } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -42,11 +42,13 @@ export function RestTimerDialog({ open, onOpenChange, timer }: RestTimerDialogPr
     durationSec,
     remainingSec,
     status,
+    alarmPlaying,
     applyPreset,
     start,
     pause,
     resume,
     reset,
+    stopAlarm,
   } = timer;
   const reducedMotion = usePrefersReducedMotion();
   const labelId = useId();
@@ -182,6 +184,16 @@ export function RestTimerDialog({ open, onOpenChange, timer }: RestTimerDialogPr
         </div>
 
         <div className="flex flex-col gap-2 border-t border-stone-800/80 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          {alarmPlaying ? (
+            <button
+              type="button"
+              onClick={stopAlarm}
+              className="cursor-pointer inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-amber-500/35 bg-amber-500/15 px-4 text-sm font-semibold text-amber-100 transition-colors hover:bg-amber-500/25"
+            >
+              <BellOff className="h-4 w-4" aria-hidden />
+              Stop alarm
+            </button>
+          ) : null}
           <div className="grid grid-cols-2 gap-2">
             {status === 'running' ? (
               <button
