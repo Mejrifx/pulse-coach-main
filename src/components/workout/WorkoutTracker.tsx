@@ -1,13 +1,25 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronUp, History, Info, Save } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, History, Info, Save, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { TRAINING_PROGRAM, PROGRAM_NOTES } from '@/data/trainingProgram';
-import { useWorkoutHistory } from '@/hooks/useWorkoutHistory';
+import { useWorkoutHistory, type WorkoutSessionSummary } from '@/hooks/useWorkoutHistory';
 import { usePreviousWorkout } from '@/hooks/usePreviousWorkout';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useWorkoutSaveBridge } from '@/contexts/WorkoutSaveBridgeContext';
 import { formatLocalDate, formatSessionDateLabel } from '@/lib/localDate';
 import { getDayByKey } from '@/data/trainingProgram';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabaseClient';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import type { DayKey } from '@/types/workout';
 
 const DAY_TABS: { key: DayKey; label: string }[] = [
@@ -29,10 +41,12 @@ export function WorkoutTracker() {
   const [currentExerciseId, setCurrentExerciseId] = useState<string | null>(null);
   const [expandedExercises, setExpandedExercises] = useState<Set<string>>(new Set());
   const exerciseRefs = useRef<Record<string, HTMLElement | null>>({});
+  const [pendingDelete, setPendingDelete] = useState<WorkoutSessionSummary | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const { sessions: historySessions, loading: historyLoading } = useWorkoutHistory(historyKey);
 
-  const { values, setCell, isSavedSession, loading, saving, save } = useWorkoutSession(
+  const { values, setCell, isSavedSession, loading, saving, save, reload } = useWorkoutSession(
     activeDay,
     sessionDate,
     { onSaved: bumpHistory },
@@ -116,6 +130,44 @@ export function WorkoutTracker() {
       block: 'center',
     });
   }, []);
+
+  const confirmDeleteSession = useCallback(async () => {
+    if (!pendingDelete) return;
+    if (!supabase) {
+      toast.error('Cannot delete — Supabase is not configured.');
+      setPendingDelete(null);
+      return;
+    }
+    const target = pendingDelete;
+    setDeleting(true);
+    const { error } = await supabase.from('workout_sessions').delete().eq('id', target.id);
+    setDeleting(false);
+
+    if (error) {
+      console.error(error);
+      toast.error('Could not delete this workout. Try again.');
+      return;
+    }
+
+    setPendingDelete(null);
+    toast.success('Workout deleted');
+    bumpHistory();
+
+    const wasCurrent =
+      target.session_date === sessionDate && target.day_key === activeDay;
+    if (wasCurrent) {
+      void reload();
+      setCompletedExercises(new Set());
+      setCurrentExerciseId(null);
+      setExpandedExercises(new Set());
+    }
+  }, [
+    pendingDelete,
+    bumpHistory,
+    sessionDate,
+    activeDay,
+    reload,
+  ]);
 
   const { data: prev, loading: prevLoading } = usePreviousWorkout(activeDay, sessionDate, historyKey);
 
@@ -461,15 +513,16 @@ export function WorkoutTracker() {
               const day = getDayByKey(s.day_key);
               const isActive = s.session_date === sessionDate && s.day_key === activeDay;
               return (
-                <li key={s.id}>
+                <li key={s.id} className="flex items-stretch">
                   <button
                     type="button"
                     onClick={() => openSession(s.session_date, s.day_key)}
-                    className={`touch-manipulation flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm transition-colors ${
+                    className={cn(
+                      'touch-manipulation flex min-h-[48px] flex-1 items-center justify-between gap-3 px-4 py-3 text-left text-sm transition-colors',
                       isActive
                         ? 'bg-emerald-950/40 text-stone-100'
-                        : 'text-stone-300 hover:bg-stone-800/50'
-                    }`}
+                        : 'text-stone-300 hover:bg-stone-800/50',
+                    )}
                   >
                     <span className="font-medium text-stone-200">
                       {formatSessionDateLabel(s.session_date)}
@@ -478,6 +531,19 @@ export function WorkoutTracker() {
                       {day?.shortLabel ?? s.day_key}
                     </span>
                   </button>
+                  <div className="flex shrink-0 items-center border-l border-stone-800/80 pl-1 pr-2">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPendingDelete(s);
+                      }}
+                      className="touch-manipulation inline-flex min-h-[48px] min-w-[48px] cursor-pointer items-center justify-center rounded-lg text-stone-500 outline-offset-2 transition-colors hover:bg-red-950/40 hover:text-red-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500"
+                      aria-label={`Delete workout from ${formatSessionDateLabel(s.session_date)}`}
+                    >
+                      <Trash2 className="h-4 w-4 shrink-0" aria-hidden />
+                    </button>
+                  </div>
                 </li>
               );
             })}
@@ -489,6 +555,40 @@ export function WorkoutTracker() {
           </p>
         ) : null}
       </details>
+
+      <AlertDialog open={pendingDelete !== null} onOpenChange={(open) => !open && setPendingDelete(null)}>
+        <AlertDialogContent className="border-stone-800 bg-neutral-900 text-stone-100 sm:max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-stone-50">Delete this workout?</AlertDialogTitle>
+            <AlertDialogDescription className="text-stone-400">
+              {pendingDelete ? (
+                <>
+                  This removes{' '}
+                  <span className="font-medium text-stone-300">
+                    {formatSessionDateLabel(pendingDelete.session_date)}
+                  </span>{' '}
+                  ({getDayByKey(pendingDelete.day_key)?.shortLabel ?? pendingDelete.day_key}) from your
+                  history. This cannot be undone.
+                </>
+              ) : null}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2 sm:gap-2">
+            <AlertDialogCancel className="cursor-pointer border-stone-700 bg-neutral-950 text-stone-200 hover:bg-stone-800">
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleting}
+              className="cursor-pointer"
+              onClick={() => void confirmDeleteSession()}
+            >
+              {deleting ? 'Deleting…' : 'Delete'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
