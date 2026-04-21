@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, History, Info, Save } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Check, ChevronDown, ChevronUp, History, Info, Save } from 'lucide-react';
 import { TRAINING_PROGRAM, PROGRAM_NOTES } from '@/data/trainingProgram';
 import { useWorkoutHistory } from '@/hooks/useWorkoutHistory';
 import { usePreviousWorkout } from '@/hooks/usePreviousWorkout';
@@ -7,6 +7,7 @@ import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useWorkoutSaveBridge } from '@/contexts/WorkoutSaveBridgeContext';
 import { formatLocalDate, formatSessionDateLabel } from '@/lib/localDate';
 import { getDayByKey } from '@/data/trainingProgram';
+import { cn } from '@/lib/utils';
 import type { DayKey } from '@/types/workout';
 
 const DAY_TABS: { key: DayKey; label: string }[] = [
@@ -23,6 +24,10 @@ export function WorkoutTracker() {
   const [activeDay, setActiveDay] = useState<DayKey>('day1');
   const [historyKey, setHistoryKey] = useState(0);
   const bumpHistory = useCallback(() => setHistoryKey((k) => k + 1), []);
+  
+  const [completedExercises, setCompletedExercises] = useState<Set<string>>(new Set());
+  const [currentExerciseId, setCurrentExerciseId] = useState<string | null>(null);
+  const exerciseRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const { sessions: historySessions, loading: historyLoading } = useWorkoutHistory(historyKey);
 
@@ -41,17 +46,52 @@ export function WorkoutTracker() {
     return () => register(null);
   }, [register, save, saving, loading]);
 
-  const openSession = useCallback((date: string, day: DayKey) => {
-    setSessionDate(date);
-    setActiveDay(day);
-  }, []);
-
-  const { data: prev, loading: prevLoading } = usePreviousWorkout(activeDay, sessionDate, historyKey);
-
   const dayDef = useMemo(
     () => TRAINING_PROGRAM.find((d) => d.key === activeDay),
     [activeDay],
   );
+
+  const openSession = useCallback((date: string, day: DayKey) => {
+    setSessionDate(date);
+    setActiveDay(day);
+    setCompletedExercises(new Set());
+    setCurrentExerciseId(null);
+  }, []);
+
+  const toggleExerciseComplete = useCallback((exerciseId: string) => {
+    setCompletedExercises((prev) => {
+      const next = new Set(prev);
+      if (next.has(exerciseId)) {
+        next.delete(exerciseId);
+      } else {
+        next.add(exerciseId);
+        // Auto-scroll to next incomplete after a brief delay
+        setTimeout(() => {
+          const nextIncomplete = dayDef?.exercises.find(
+            (ex) => !next.has(ex.id) && ex.id !== exerciseId
+          );
+          if (nextIncomplete) {
+            setCurrentExerciseId(nextIncomplete.id);
+            exerciseRefs.current[nextIncomplete.id]?.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
+          }
+        }, 300);
+      }
+      return next;
+    });
+  }, [dayDef]);
+
+  const scrollToExercise = useCallback((exerciseId: string) => {
+    setCurrentExerciseId(exerciseId);
+    exerciseRefs.current[exerciseId]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  }, []);
+
+  const { data: prev, loading: prevLoading } = usePreviousWorkout(activeDay, sessionDate, historyKey);
 
   const status = isSavedSession ? 'Saved workout' : 'New workout';
 
@@ -60,6 +100,13 @@ export function WorkoutTracker() {
     const d = getDayByKey(prev.dayKey);
     return `${formatSessionDateLabel(prev.sessionDate)} • ${d?.shortLabel ?? prev.dayKey}`;
   }, [prev]);
+
+  const progressStats = useMemo(() => {
+    if (!dayDef) return { completed: 0, total: 0, percentage: 0 };
+    const total = dayDef.exercises.length;
+    const completed = dayDef.exercises.filter((ex) => completedExercises.has(ex.id)).length;
+    return { completed, total, percentage: total > 0 ? (completed / total) * 100 : 0 };
+  }, [dayDef, completedExercises]);
 
   return (
     <div className="space-y-8">
@@ -119,14 +166,14 @@ export function WorkoutTracker() {
             <p className="text-sm text-stone-400">
               {isSavedSession ? (
                 <>
-                  You’re <strong className="text-stone-200">viewing a saved workout</strong>. Edit
+                  You're <strong className="text-stone-200">viewing a saved workout</strong>. Edit
                   numbers and hit <strong className="text-stone-200">Save workout</strong> to
                   overwrite this session.
                 </>
               ) : (
                 <>
-                  You’re starting a <strong className="text-stone-200">new workout</strong> for this
-                  date/day. It won’t show in history until you save.
+                  You're starting a <strong className="text-stone-200">new workout</strong> for this
+                  date/day. It won't show in history until you save.
                 </>
               )}
             </p>
@@ -176,91 +223,186 @@ export function WorkoutTracker() {
         <p className="text-sm text-stone-500">Loading session…</p>
       ) : dayDef ? (
         <section className="space-y-6">
-          <div className="flex flex-col gap-2 border-b border-stone-800 pb-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h3 className="text-xl font-semibold text-stone-50">{dayDef.label}</h3>
-              <p className="text-sm text-stone-500">
-                Enter numbers for each set. “Last” shows your previous session for this same day.
-              </p>
+          {/* Progress indicator */}
+          <div className="sticky top-[120px] z-10 rounded-2xl border border-stone-800 bg-neutral-900/95 p-4 backdrop-blur-xl md:top-[130px]">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-stone-50">{dayDef.label}</h3>
+                <p className="text-xs text-stone-500">
+                  {progressStats.completed} of {progressStats.total} exercises complete
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => void save()}
+                className="touch-manipulation inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 disabled:opacity-60"
+              >
+                <Save className="h-4 w-4" aria-hidden />
+                <span className="hidden sm:inline">{saving ? 'Saving…' : 'Save'}</span>
+              </button>
             </div>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => void save()}
-              className="touch-manipulation inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 hover:bg-emerald-400 disabled:opacity-60"
-            >
-              <Save className="h-4 w-4" aria-hidden />
-              {saving ? 'Saving…' : 'Save workout'}
-            </button>
+            
+            {/* Progress bar */}
+            <div className="h-2 w-full overflow-hidden rounded-full bg-stone-800">
+              <div
+                className="h-full bg-emerald-500 transition-all duration-500 ease-out"
+                style={{ width: `${progressStats.percentage}%` }}
+              />
+            </div>
+
+            {/* Quick jump nav */}
+            <div className="scrollbar-thin mt-3 flex gap-1.5 overflow-x-auto pb-1">
+              {dayDef.exercises.map((ex, idx) => {
+                const isCompleted = completedExercises.has(ex.id);
+                const isCurrent = currentExerciseId === ex.id;
+                return (
+                  <button
+                    key={ex.id}
+                    type="button"
+                    onClick={() => scrollToExercise(ex.id)}
+                    className={cn(
+                      'touch-manipulation shrink-0 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition-colors',
+                      isCurrent && 'ring-2 ring-emerald-400 ring-offset-2 ring-offset-neutral-900',
+                      isCompleted
+                        ? 'border-emerald-500/40 bg-emerald-500/20 text-emerald-300'
+                        : 'border-stone-800 bg-neutral-950 text-stone-400 hover:border-stone-700 hover:text-stone-200'
+                    )}
+                    aria-label={`Jump to ${ex.name}`}
+                    title={ex.name}
+                  >
+                    {idx + 1}
+                    {isCompleted && <Check className="ml-1 inline h-3 w-3" aria-hidden />}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
-          <div className="space-y-8">
-            {dayDef.exercises.map((ex) => (
-              <article
-                key={ex.id}
-                className="rounded-2xl border border-stone-800 bg-neutral-950/60 p-4 md:p-5"
-              >
-                <div className="mb-4 flex flex-col gap-1 md:flex-row md:items-baseline md:justify-between">
-                  <h4 className="font-medium text-stone-100">{ex.name}</h4>
-                  <span className="text-sm text-emerald-500/90">{ex.repRange}</span>
-                </div>
-                {ex.notes ? (
-                  <p className="mb-3 text-xs text-stone-500">{ex.notes}</p>
-                ) : null}
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {Array.from({ length: ex.sets }, (_, i) => {
-                    const k = `${ex.id}-${i}`;
-                    const cell = values[k] ?? { weight: '', reps: '' };
-                    const prevCell = prev?.values?.[k];
-                    const prevText =
-                      prevCell && (prevCell.weight || prevCell.reps)
-                        ? `${prevCell.weight || '—'}kg × ${prevCell.reps || '—'}`
-                        : null;
-                    return (
-                      <div
-                        key={k}
-                        className="rounded-xl border border-stone-800/80 bg-neutral-900/50 p-3"
+          <div className="space-y-4">
+            {dayDef.exercises.map((ex) => {
+              const isCompleted = completedExercises.has(ex.id);
+              const isCurrent = currentExerciseId === ex.id;
+              const [isExpanded, setIsExpanded] = useState(!isCompleted);
+
+              return (
+                <article
+                  key={ex.id}
+                  ref={(el) => {
+                    exerciseRefs.current[ex.id] = el;
+                  }}
+                  className={cn(
+                    'rounded-2xl border p-4 transition-all duration-300 md:p-5',
+                    isCurrent && !isCompleted
+                      ? 'border-emerald-500/50 bg-emerald-500/5 shadow-lg shadow-emerald-500/10'
+                      : isCompleted
+                        ? 'border-stone-800/60 bg-neutral-950/40'
+                        : 'border-stone-800 bg-neutral-950/60'
+                  )}
+                >
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div className="flex min-w-0 flex-1 items-start gap-3">
+                      <button
+                        type="button"
+                        onClick={() => toggleExerciseComplete(ex.id)}
+                        className={cn(
+                          'touch-manipulation mt-0.5 flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-md border-2 transition-colors',
+                          isCompleted
+                            ? 'border-emerald-500 bg-emerald-500 text-white'
+                            : 'border-stone-700 bg-neutral-950 hover:border-emerald-500/50'
+                        )}
+                        aria-label={isCompleted ? 'Mark as incomplete' : 'Mark as complete'}
                       >
-                        <div className="mb-2 flex items-center justify-between gap-2">
-                          <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
-                            Set {i + 1}
-                          </p>
-                          {prevText ? (
-                            <p className="text-[11px] text-stone-500">
-                              Last: <span className="text-stone-400">{prevText}</span>
-                            </p>
-                          ) : null}
-                        </div>
-                        <div className="flex gap-2">
-                          <label className="flex-1 text-xs">
-                            <span className="text-stone-500">kg</span>
-                            <input
-                              type="text"
-                              inputMode="decimal"
-                              placeholder="—"
-                              value={cell.weight}
-                              onChange={(e) => setCell(ex.id, i, 'weight', e.target.value)}
-                              className="mt-1 w-full rounded-lg border border-stone-700 bg-neutral-950 px-2 py-1.5 text-stone-100 outline-none focus:border-emerald-500"
-                            />
-                          </label>
-                          <label className="flex-1 text-xs">
-                            <span className="text-stone-500">reps</span>
-                            <input
-                              type="text"
-                              inputMode="numeric"
-                              placeholder="—"
-                              value={cell.reps}
-                              onChange={(e) => setCell(ex.id, i, 'reps', e.target.value)}
-                              className="mt-1 w-full rounded-lg border border-stone-700 bg-neutral-950 px-2 py-1.5 text-stone-100 outline-none focus:border-emerald-500"
-                            />
-                          </label>
-                        </div>
+                        {isCompleted && <Check className="h-4 w-4" aria-hidden />}
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <h4
+                          className={cn(
+                            'font-medium',
+                            isCompleted ? 'text-stone-400 line-through' : 'text-stone-100'
+                          )}
+                        >
+                          {ex.name}
+                        </h4>
+                        <span className="text-sm text-emerald-500/90">{ex.repRange}</span>
+                        {ex.notes ? (
+                          <p className="mt-1 text-xs text-stone-500">{ex.notes}</p>
+                        ) : null}
                       </div>
-                    );
-                  })}
-                </div>
-              </article>
-            ))}
+                    </div>
+                    {isCompleted && (
+                      <button
+                        type="button"
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="touch-manipulation flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-stone-500 hover:bg-stone-800/50 hover:text-stone-300"
+                        aria-label={isExpanded ? 'Collapse exercise' : 'Expand exercise'}
+                      >
+                        {isExpanded ? (
+                          <ChevronUp className="h-4 w-4" aria-hidden />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" aria-hidden />
+                        )}
+                      </button>
+                    )}
+                  </div>
+
+                  {(!isCompleted || isExpanded) && (
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {Array.from({ length: ex.sets }, (_, i) => {
+                        const k = `${ex.id}-${i}`;
+                        const cell = values[k] ?? { weight: '', reps: '' };
+                        const prevCell = prev?.values?.[k];
+                        const prevText =
+                          prevCell && (prevCell.weight || prevCell.reps)
+                            ? `${prevCell.weight || '—'}kg × ${prevCell.reps || '—'}`
+                            : null;
+                        return (
+                          <div
+                            key={k}
+                            className="rounded-xl border border-stone-800/80 bg-neutral-900/50 p-3"
+                          >
+                            <div className="mb-2 flex items-center justify-between gap-2">
+                              <p className="text-xs font-medium uppercase tracking-wide text-stone-500">
+                                Set {i + 1}
+                              </p>
+                              {prevText ? (
+                                <p className="text-[11px] text-stone-500">
+                                  Last: <span className="text-stone-400">{prevText}</span>
+                                </p>
+                              ) : null}
+                            </div>
+                            <div className="flex gap-2">
+                              <label className="flex-1 text-xs">
+                                <span className="text-stone-500">kg</span>
+                                <input
+                                  type="text"
+                                  inputMode="decimal"
+                                  placeholder="—"
+                                  value={cell.weight}
+                                  onChange={(e) => setCell(ex.id, i, 'weight', e.target.value)}
+                                  className="mt-1 w-full rounded-lg border border-stone-700 bg-neutral-950 px-2 py-1.5 text-stone-100 outline-none focus:border-emerald-500"
+                                />
+                              </label>
+                              <label className="flex-1 text-xs">
+                                <span className="text-stone-500">reps</span>
+                                <input
+                                  type="text"
+                                  inputMode="numeric"
+                                  placeholder="—"
+                                  value={cell.reps}
+                                  onChange={(e) => setCell(ex.id, i, 'reps', e.target.value)}
+                                  className="mt-1 w-full rounded-lg border border-stone-700 bg-neutral-950 px-2 py-1.5 text-stone-100 outline-none focus:border-emerald-500"
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </section>
       ) : null}
