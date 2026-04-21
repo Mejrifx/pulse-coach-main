@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useMatch } from 'react-router-dom';
-import { Dumbbell, FlaskConical, LogOut, Save, Timer, Zap } from 'lucide-react';
+import { Dumbbell, FlaskConical, LogOut, Save, Timer } from 'lucide-react';
 import { RestTimerDialog } from '@/components/workout/RestTimerDialog';
+import { PulseLogo } from '@/components/PulseLogo';
 import { useAuth } from '@/contexts/AuthContext';
 import { WorkoutSaveBridgeProvider, useWorkoutSaveBridge } from '@/contexts/WorkoutSaveBridgeContext';
 import { useRestTimer } from '@/hooks/useRestTimer';
@@ -30,11 +31,14 @@ function DashboardLayoutInner() {
         <div className="px-4 py-3">
           <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 shadow-lg shadow-emerald-500/20">
-                <Zap className="h-4 w-4 text-white" aria-hidden />
+              <div className="flex items-center">
+                <PulseLogo
+                  priority
+                  className="h-7 sm:h-8"
+                  alt="Pulse"
+                />
               </div>
-              <div className="leading-tight">
-                <p className="text-[13px] font-semibold tracking-tight text-stone-100">PULSE</p>
+              <div className="leading-tight pl-1">
                 <p className="text-[11px] text-stone-500">Dashboard</p>
               </div>
             </div>

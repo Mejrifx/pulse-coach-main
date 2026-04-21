@@ -12,6 +12,7 @@ import {
   Mail,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { PulseLogo } from '@/components/PulseLogo';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -279,12 +280,7 @@ const FooterCTA: React.FC = () => {
               {/* Logo & description */}
               <div className="col-span-2">
                 <a href="#" className="flex items-center gap-2 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                    <Zap className="w-5 h-5 text-white" />
-                  </div>
-                  <span className="text-xl font-bold tracking-tight text-stone-100">
-                    PULSE
-                  </span>
+                  <PulseLogo priority className="h-9" alt="Pulse" />
                 </a>
                 <p className="text-sm text-stone-500 mb-6 max-w-xs">
                   The all-in-one platform for elite coaches who demand precision.

@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Zap } from 'lucide-react';
 import { isSupabaseConfigured, supabase } from '@/lib/supabaseClient';
+import { PulseLogo } from '@/components/PulseLogo';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -72,10 +72,7 @@ export default function LoginPage() {
               to="/"
               className="flex items-center gap-2 rounded-lg outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 shadow-lg shadow-emerald-500/20">
-                <Zap className="h-4 w-4 text-white" aria-hidden />
-              </div>
-              <span className="text-lg font-bold tracking-tight">PULSE</span>
+              <PulseLogo priority className="h-8" alt="Pulse" />
             </Link>
             <Link
               to="/"
@@ -113,10 +110,7 @@ export default function LoginPage() {
             to="/"
             className="flex items-center gap-2 rounded-lg outline-offset-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-500"
           >
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500 shadow-lg shadow-emerald-500/20">
-              <Zap className="h-4 w-4 text-white" aria-hidden />
-            </div>
-            <span className="text-lg font-bold tracking-tight">PULSE</span>
+            <PulseLogo priority className="h-8" alt="Pulse" />
           </Link>
           <Link
             to="/"

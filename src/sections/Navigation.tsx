@@ -1,7 +1,8 @@
 import React, { useRef, useLayoutEffect, useState, useEffect, useId } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, Zap } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { scrollToSection as scrollToAnchor } from '../lib/scrollToSection';
+import { PulseLogo } from '@/components/PulseLogo';
 
 const Navigation: React.FC = () => {
   const navRef = useRef<HTMLElement>(null);
@@ -64,12 +65,11 @@ const Navigation: React.FC = () => {
                 window.scrollTo({ top: 0, behavior: 'instant' });
               }}
             >
-              <div className="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:shadow-emerald-500/40 transition-shadow">
-                <Zap className="w-5 h-5 text-white" aria-hidden />
-              </div>
-              <span className="text-xl font-bold tracking-tight text-stone-100">
-                PULSE
-              </span>
+              <PulseLogo
+                priority
+                className="h-8 md:h-9"
+                alt="Pulse"
+              />
             </a>
 
             <div className="hidden md:flex items-center gap-8">
