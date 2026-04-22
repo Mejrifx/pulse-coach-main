@@ -3,6 +3,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { motion } from 'framer-motion';
 import { scrollToSection as scrollToAnchor } from '../lib/scrollToSection';
+import { ScrollFrameSequence } from '@/components/ScrollFrameSequence';
 import {
   TrendingUp,
   Activity,
@@ -14,6 +15,10 @@ import {
 
 gsap.registerPlugin(ScrollTrigger);
 
+const FRAME_COUNT = 151;
+const framePathTemplate = (index: number) =>
+  `/Pulse%20Video%20Frames/ezgif-frame-${String(index).padStart(3, '0')}.jpg`;
+
 type HeroCardData = {
   icon: typeof Activity;
   title: string;
@@ -23,9 +28,7 @@ type HeroCardData = {
   rotateX: number;
   rotateY: number;
   accent: 'emerald' | 'orange' | 'blue' | 'stone';
-  /** CSS placement (absolute within orbit layer) */
   floatClass: string;
-  /** Scroll scrub: start pulled toward hero center → end drifts outward (screen coords: +x right, +y down) */
   drift: {
     from: { x: number; y: number; scale: number };
     to: { x: number; y: number; scale: number; rotateX: number; rotateY: number };
@@ -122,6 +125,8 @@ const Hero: React.FC = () => {
   const ctaRef = useRef<HTMLDivElement>(null);
   const bgGlowRef = useRef<HTMLDivElement>(null);
   const cardsContainerRef = useRef<HTMLDivElement>(null);
+  const heroContentRef = useRef<HTMLDivElement>(null);
+  const frameSequenceRef = useRef<HTMLDivElement>(null);
 
   const cards: HeroCardData[] = [
     {
@@ -198,13 +203,48 @@ const Hero: React.FC = () => {
 
     mm.add('(prefers-reduced-motion: no-preference)', () => {
       const ctx = gsap.context(() => {
-        /* No pin: pinned hero forced ~1.3× viewport of “dead” scroll before the page moved — felt broken.
-         * Scrub across the section’s natural pass through the viewport instead. */
         const scrubBase = {
           trigger: section,
           start: 'top top',
           end: 'bottom top',
         };
+
+        // Fade out original hero content in first half of scroll
+        if (heroContentRef.current) {
+          gsap.fromTo(
+            heroContentRef.current,
+            { opacity: 1, y: 0 },
+            {
+              opacity: 0,
+              y: -80,
+              ease: 'power2.out',
+              scrollTrigger: {
+                trigger: section,
+                start: 'top top',
+                end: 'center top',
+                scrub: 1,
+              },
+            }
+          );
+        }
+
+        // Fade in frame sequence in second half
+        if (frameSequenceRef.current) {
+          gsap.fromTo(
+            frameSequenceRef.current,
+            { opacity: 0 },
+            {
+              opacity: 1,
+              ease: 'none',
+              scrollTrigger: {
+                trigger: section,
+                start: 'center top',
+                end: 'center+=20% top',
+                scrub: 1,
+              },
+            }
+          );
+        }
 
         if (bgGlowRef.current) {
           gsap.fromTo(
@@ -214,7 +254,6 @@ const Hero: React.FC = () => {
               yPercent: 20,
               scale: 1.1,
               ease: 'none',
-              /* scrub: number = smoothed/laggy (“butter”); true = locked to scroll position */
               scrollTrigger: { ...scrubBase, scrub: true },
             }
           );
@@ -302,7 +341,7 @@ const Hero: React.FC = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-[100dvh] w-full overflow-hidden bg-neutral-950"
+      className="relative min-h-[200dvh] w-full overflow-hidden bg-neutral-950"
     >
       <div
         ref={bgGlowRef}
@@ -310,8 +349,11 @@ const Hero: React.FC = () => {
       />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,_rgba(255,255,255,0.04)_0%,_transparent_55%)]" />
 
-      {/* Single full-viewport column: justify-center vertically centers the hero block in the padded content box (fixes “sitting low” from nested min-heights + flex-1). */}
-      <div className="relative z-10 mx-auto box-border flex min-h-[100dvh] w-full max-w-[1200px] flex-col justify-center section-padding pb-10 pt-24 md:pb-14 md:pt-28">
+      {/* Original hero content - fades out on scroll */}
+      <div
+        ref={heroContentRef}
+        className="sticky top-0 z-10 mx-auto box-border flex min-h-[100dvh] w-full max-w-[1200px] flex-col justify-center section-padding pb-10 pt-24 md:pb-14 md:pt-28"
+      >
         <div
           ref={cardsContainerRef}
           className="perspective-container pointer-events-none absolute inset-0 z-[1] hidden md:block"
@@ -399,6 +441,20 @@ const Hero: React.FC = () => {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* Frame sequence video reveal */}
+      <div
+        ref={frameSequenceRef}
+        className="pointer-events-none sticky top-0 z-20 flex h-[100dvh] w-full items-center justify-center opacity-0"
+      >
+        <ScrollFrameSequence
+          frameCount={FRAME_COUNT}
+          framePathTemplate={framePathTemplate}
+          className="absolute inset-0"
+          startTrigger="center top"
+          endTrigger="bottom top"
+        />
       </div>
     </section>
   );
