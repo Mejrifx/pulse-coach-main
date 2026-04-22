@@ -15,9 +15,9 @@ import {
 
 gsap.registerPlugin(ScrollTrigger);
 
-const FRAME_COUNT = 145;
+const FRAME_COUNT = 151;
 const FRAME_END = 151;
-// Reverse: play from frame 151 down to frame 7
+// Reverse: play from frame 151 down to frame 1
 const framePathTemplate = (index: number) => {
   const frameNumber = FRAME_END - index;
   return `/Pulse%20Video%20Frames/ezgif-frame-${String(frameNumber).padStart(3, '0')}.jpg`;
