@@ -35,3 +35,4 @@ create trigger supplements_updated_at
   for each row
   execute function public.set_supplements_updated_at();
 
+ 

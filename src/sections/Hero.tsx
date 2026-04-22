@@ -203,134 +203,55 @@ const Hero: React.FC = () => {
 
     mm.add('(prefers-reduced-motion: no-preference)', () => {
       const ctx = gsap.context(() => {
-        const scrubBase = {
-          trigger: section,
-          start: 'top top',
-          end: 'bottom top',
-        };
-
-        // Fade out original hero content in first half of scroll
-        if (heroContentRef.current) {
-          gsap.fromTo(
-            heroContentRef.current,
-            { opacity: 1, y: 0 },
-            {
-              opacity: 0,
-              y: -80,
-              ease: 'power2.out',
-              scrollTrigger: {
-                trigger: section,
-                start: 'top top',
-                end: 'center top',
-                scrub: 1,
-              },
-            }
-          );
-        }
-
-        // Fade in frame sequence in second half
-        if (frameSequenceRef.current) {
-          gsap.fromTo(
-            frameSequenceRef.current,
-            { opacity: 0 },
-            {
-              opacity: 1,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: section,
-                start: '40% top',
-                end: '50% top',
-                scrub: 1,
-                markers: true,
-              },
-            }
-          );
-        }
-
-        if (bgGlowRef.current) {
-          gsap.fromTo(
-            bgGlowRef.current,
-            { yPercent: -18, scale: 1 },
-            {
-              yPercent: 20,
-              scale: 1.1,
-              ease: 'none',
-              scrollTrigger: { ...scrubBase, scrub: true },
-            }
-          );
-        }
-
-        if (headlineRef.current) {
-          gsap.fromTo(
-            headlineRef.current,
-            { y: 0, opacity: 1 },
-            {
-              y: -140,
-              opacity: 0.2,
-              ease: 'none',
-              scrollTrigger: { ...scrubBase, scrub: true },
-            }
-          );
-        }
-
-        if (subheadlineRef.current) {
-          gsap.fromTo(
-            subheadlineRef.current,
-            { y: 0, opacity: 1 },
-            {
-              y: -100,
-              opacity: 0.15,
-              ease: 'none',
-              scrollTrigger: { ...scrubBase, scrub: true },
-            }
-          );
-        }
-
-        if (ctaRef.current) {
-          gsap.fromTo(
-            ctaRef.current,
-            { y: 0, opacity: 1 },
-            {
-              y: -64,
-              opacity: 0,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: section,
-                start: 'top top',
-                end: 'center top',
-                scrub: true,
-              },
-            }
-          );
-        }
-
-        const cardElements = cardsContainerRef.current?.querySelectorAll('.hero-card');
-        cardElements?.forEach((card, i) => {
-          const spec = cards[i];
-          if (!spec) return;
-          const { from, to } = spec.drift;
-          gsap.fromTo(
-            card,
-            {
-              x: from.x,
-              y: from.y,
-              scale: from.scale,
-              rotateX: spec.rotateX,
-              rotateY: spec.rotateY,
-              force3D: true,
-            },
-            {
-              x: to.x,
-              y: to.y,
-              scale: to.scale,
-              rotateX: to.rotateX,
-              rotateY: to.rotateY,
-              ease: 'none',
-              force3D: true,
-              scrollTrigger: { ...scrubBase, scrub: true },
-            }
-          );
+        // Pin the entire hero section during the animation
+        const mainTimeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: section,
+            start: 'top top',
+            end: '+=300%',
+            pin: true,
+            scrub: 1,
+            anticipatePin: 1,
+          },
         });
+
+        // Phase 1 (0% → 20%): Fade out original hero content
+        mainTimeline.to(
+          heroContentRef.current,
+          {
+            opacity: 0,
+            y: -80,
+            ease: 'power2.out',
+            duration: 0.2,
+          },
+          0
+        );
+
+        // Phase 2 (15% → 100%): Fade in and play frame sequence
+        mainTimeline.fromTo(
+          frameSequenceRef.current,
+          { opacity: 0 },
+          {
+            opacity: 1,
+            ease: 'power1.in',
+            duration: 0.15,
+          },
+          0.15
+        );
+
+        // Subtle background effects during animation
+        if (bgGlowRef.current) {
+          mainTimeline.to(
+            bgGlowRef.current,
+            {
+              scale: 1.2,
+              opacity: 0.6,
+              ease: 'none',
+              duration: 1,
+            },
+            0
+          );
+        }
       }, section);
 
       return () => ctx.revert();
@@ -342,7 +263,7 @@ const Hero: React.FC = () => {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-[200dvh] w-full overflow-hidden bg-neutral-950"
+      className="relative min-h-[100dvh] w-full overflow-hidden bg-neutral-950"
     >
       <div
         ref={bgGlowRef}
@@ -353,7 +274,7 @@ const Hero: React.FC = () => {
       {/* Original hero content - fades out on scroll */}
       <div
         ref={heroContentRef}
-        className="sticky top-0 z-10 mx-auto box-border flex min-h-[100dvh] w-full max-w-[1200px] flex-col justify-center section-padding pb-10 pt-24 md:pb-14 md:pt-28"
+        className="relative z-10 mx-auto box-border flex min-h-[100dvh] w-full max-w-[1200px] flex-col justify-center section-padding pb-10 pt-24 md:pb-14 md:pt-28"
       >
         <div
           ref={cardsContainerRef}
@@ -444,20 +365,18 @@ const Hero: React.FC = () => {
         </div>
       </div>
 
-      {/* Frame sequence video reveal */}
+      {/* Frame sequence video reveal - overlays on top */}
       <div
         ref={frameSequenceRef}
-        className="pointer-events-none sticky top-0 z-20 flex h-[100dvh] w-full items-center justify-center opacity-0"
+        className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center opacity-0"
       >
-        <div className="absolute inset-0 flex items-center justify-center">
-          <ScrollFrameSequence
-            frameCount={FRAME_COUNT}
-            framePathTemplate={framePathTemplate}
-            className="h-full w-full max-w-7xl"
-            startTrigger="50% top"
-            endTrigger="bottom top"
-          />
-        </div>
+        <ScrollFrameSequence
+          frameCount={FRAME_COUNT}
+          framePathTemplate={framePathTemplate}
+          className="h-full w-full max-w-7xl"
+          startTrigger="top top"
+          endTrigger="+=300%"
+        />
       </div>
     </section>
   );

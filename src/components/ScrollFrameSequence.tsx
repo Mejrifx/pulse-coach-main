@@ -35,22 +35,15 @@ export function ScrollFrameSequence({
     const images: HTMLImageElement[] = [];
     let loadedCount = 0;
 
-    console.log('[ScrollFrameSequence] Starting to preload', frameCount, 'frames');
-
     for (let i = 1; i <= frameCount; i++) {
       const img = new Image();
       const path = framePathTemplate(i);
       img.src = path;
       
-      if (i === 1) {
-        console.log('[ScrollFrameSequence] First frame path:', path);
-      }
-      
       img.onload = () => {
         loadedCount++;
         setLoadProgress((loadedCount / frameCount) * 100);
         if (loadedCount === frameCount) {
-          console.log('[ScrollFrameSequence] All frames loaded!');
           setLoaded(true);
         }
       };
@@ -99,25 +92,16 @@ export function ScrollFrameSequence({
 
   // Setup scroll animation
   useLayoutEffect(() => {
-    if (!loaded) {
-      console.log('[ScrollFrameSequence] Waiting for frames to load...');
-      return;
-    }
+    if (!loaded) return;
     const container = containerRef.current;
     const canvas = canvasRef.current;
-    if (!container || !canvas) {
-      console.error('[ScrollFrameSequence] Missing container or canvas');
-      return;
-    }
-
-    console.log('[ScrollFrameSequence] Setting up scroll animation');
+    if (!container || !canvas) return;
 
     const updateCanvasSize = () => {
       const dpr = window.devicePixelRatio || 1;
       const rect = canvas.getBoundingClientRect();
       canvas.width = rect.width * dpr;
       canvas.height = rect.height * dpr;
-      console.log('[ScrollFrameSequence] Canvas size:', canvas.width, 'x', canvas.height);
       render(currentFrameRef.current);
     };
 
@@ -132,10 +116,8 @@ export function ScrollFrameSequence({
         start: startTrigger,
         end: endTrigger,
         scrub: 1,
-        markers: true,
         onUpdate: (self) => {
           frameIndex.value = self.progress * (frameCount - 1);
-          console.log('[ScrollFrameSequence] Progress:', self.progress.toFixed(2), 'Frame:', Math.floor(frameIndex.value));
           render(frameIndex.value);
         },
       },
