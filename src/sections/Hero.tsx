@@ -238,9 +238,10 @@ const Hero: React.FC = () => {
               ease: 'none',
               scrollTrigger: {
                 trigger: section,
-                start: 'center top',
-                end: 'center+=20% top',
+                start: '40% top',
+                end: '50% top',
                 scrub: 1,
+                markers: true,
               },
             }
           );
@@ -448,13 +449,15 @@ const Hero: React.FC = () => {
         ref={frameSequenceRef}
         className="pointer-events-none sticky top-0 z-20 flex h-[100dvh] w-full items-center justify-center opacity-0"
       >
-        <ScrollFrameSequence
-          frameCount={FRAME_COUNT}
-          framePathTemplate={framePathTemplate}
-          className="absolute inset-0"
-          startTrigger="center top"
-          endTrigger="bottom top"
-        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <ScrollFrameSequence
+            frameCount={FRAME_COUNT}
+            framePathTemplate={framePathTemplate}
+            className="h-full w-full max-w-7xl"
+            startTrigger="50% top"
+            endTrigger="bottom top"
+          />
+        </div>
       </div>
     </section>
   );
