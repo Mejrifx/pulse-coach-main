@@ -12,7 +12,8 @@ export default function WorkoutsPage() {
           </div>
           <h1 className="mt-2 text-2xl font-semibold text-stone-50">Workout log</h1>
           <p className="mt-2 max-w-2xl text-stone-400">
-            Track weight and reps per set. Compare each set to your previous session (“Last”).
+            Set up your own training days and exercises, then track weight and reps per set. Compare
+            each set to your previous session (“Last”).
           </p>
         </div>
       </div>

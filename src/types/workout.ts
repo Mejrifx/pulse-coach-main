@@ -1,4 +1,5 @@
-export type DayKey = 'day1' | 'day2' | 'day3' | 'day4' | 'abs';
+/** Opaque id for a program day (e.g. d_<uuid> or legacy day1…abs) */
+export type DayKey = string;
 
 export type ExerciseDef = {
   id: string;
@@ -14,4 +15,9 @@ export type DayDef = {
   label: string;
   shortLabel: string;
   exercises: ExerciseDef[];
+};
+
+export type WorkoutProgramDocument = {
+  version: 1;
+  days: DayDef[];
 };

@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Check, ChevronDown, ChevronUp, History, Info, Save, Trash2 } from 'lucide-react';
+import { Check, ChevronDown, ChevronUp, History, Info, Pencil, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { TRAINING_PROGRAM, PROGRAM_NOTES } from '@/data/trainingProgram';
 import { useWorkoutHistory, type WorkoutSessionSummary } from '@/hooks/useWorkoutHistory';
+import { useUserWorkoutProgram } from '@/hooks/useUserWorkoutProgram';
 import { usePreviousWorkout } from '@/hooks/usePreviousWorkout';
 import { useWorkoutSession } from '@/hooks/useWorkoutSession';
 import { useWorkoutSaveBridge } from '@/contexts/WorkoutSaveBridgeContext';
 import { formatLocalDate, formatSessionDateLabel } from '@/lib/localDate';
-import { getDayByKey } from '@/data/trainingProgram';
+import { DEFAULT_PROGRAM_TIPS, dayKeyOrder, getDayFromProgram } from '@/lib/workoutProgram';
+import { ProgramBuilder } from '@/components/workout/ProgramBuilder';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/lib/supabaseClient';
 import {
@@ -22,18 +23,13 @@ import {
 import { Button } from '@/components/ui/button';
 import type { DayKey } from '@/types/workout';
 
-const DAY_TABS: { key: DayKey; label: string }[] = [
-  { key: 'day1', label: 'D1' },
-  { key: 'day2', label: 'D2' },
-  { key: 'day3', label: 'D3' },
-  { key: 'day4', label: 'D4' },
-  { key: 'abs', label: 'Abs' },
-];
-
 export function WorkoutTracker() {
   const { register } = useWorkoutSaveBridge();
+  const { program, hasProgram, loading: programLoading, error: programError, saveProgram, refetch: refetchProgram } =
+    useUserWorkoutProgram();
+  const [editingProgram, setEditingProgram] = useState(false);
   const [sessionDate, setSessionDate] = useState(() => formatLocalDate(new Date()));
-  const [activeDay, setActiveDay] = useState<DayKey>('day1');
+  const [activeDay, setActiveDay] = useState<DayKey>('');
   const [historyKey, setHistoryKey] = useState(0);
   const bumpHistory = useCallback(() => setHistoryKey((k) => k + 1), []);
   
@@ -44,27 +40,48 @@ export function WorkoutTracker() {
   const [pendingDelete, setPendingDelete] = useState<WorkoutSessionSummary | null>(null);
   const [deleting, setDeleting] = useState(false);
 
-  const { sessions: historySessions, loading: historyLoading } = useWorkoutHistory(historyKey);
+  const dayOrder = useMemo(() => dayKeyOrder(program), [program]);
+  const { sessions: historySessions, loading: historyLoading } = useWorkoutHistory(historyKey, dayOrder);
+
+  const dayDef = useMemo(
+    () => (program && activeDay ? getDayFromProgram(program, activeDay) : undefined),
+    [program, activeDay],
+  );
 
   const { values, setCell, isSavedSession, loading, saving, save, reload } = useWorkoutSession(
     activeDay,
     sessionDate,
-    { onSaved: bumpHistory },
+    { onSaved: bumpHistory, day: dayDef ?? null },
   );
 
+  const showBuilder =
+    !programLoading && !programError && (!hasProgram || editingProgram);
+  const showTracker = hasProgram && !editingProgram && !programError;
+
   useEffect(() => {
+    if (programError) return;
+    if (!program?.days.length) {
+      if (activeDay) setActiveDay('');
+      return;
+    }
+    const hasKey = program.days.some((d) => d.key === activeDay);
+    if (!activeDay || !hasKey) {
+      setActiveDay(program.days[0].key);
+    }
+  }, [program, activeDay, programError]);
+
+  useEffect(() => {
+    if (!showTracker) {
+      register(null);
+      return;
+    }
     register({
       save: () => void save(),
       saving,
       loading,
     });
     return () => register(null);
-  }, [register, save, saving, loading]);
-
-  const dayDef = useMemo(
-    () => TRAINING_PROGRAM.find((d) => d.key === activeDay),
-    [activeDay],
-  );
+  }, [register, save, saving, loading, showTracker]);
 
   const openSession = useCallback((date: string, day: DayKey) => {
     setSessionDate(date);
@@ -175,9 +192,9 @@ export function WorkoutTracker() {
 
   const lastTimeLabel = useMemo(() => {
     if (!prev) return null;
-    const d = getDayByKey(prev.dayKey);
+    const d = program ? getDayFromProgram(program, prev.dayKey) : undefined;
     return `${formatSessionDateLabel(prev.sessionDate)} • ${d?.shortLabel ?? prev.dayKey}`;
-  }, [prev]);
+  }, [prev, program]);
 
   const progressStats = useMemo(() => {
     if (!dayDef) return { completed: 0, total: 0, percentage: 0 };
@@ -186,11 +203,66 @@ export function WorkoutTracker() {
     return { completed, total, percentage: total > 0 ? (completed / total) * 100 : 0 };
   }, [dayDef, completedExercises]);
 
+  if (programLoading) {
+    return (
+      <div className="rounded-2xl border border-stone-800 bg-neutral-900/40 p-8 text-center text-sm text-stone-500">
+        Loading your program…
+      </div>
+    );
+  }
+
+  if (programError) {
+    return (
+      <div className="rounded-2xl border border-red-500/30 bg-red-500/5 p-6 text-sm text-stone-300">
+        <p className="font-medium text-stone-100">Couldn’t load your program</p>
+        <p className="mt-2 text-stone-400">{programError}</p>
+        <p className="mt-2 text-xs text-stone-500">
+          If this is your first time, add migration <code className="rounded bg-stone-800 px-1">003_user_workout_program.sql</code> in
+          Supabase, then try again.
+        </p>
+        <button
+          type="button"
+          onClick={() => void refetchProgram()}
+          className="mt-4 cursor-pointer rounded-lg border border-stone-600 bg-stone-800/50 px-4 py-2 text-stone-200 transition-colors hover:bg-stone-800"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (showBuilder) {
+    return (
+      <div className="rounded-2xl border border-stone-800 bg-neutral-900/40 p-5 md:p-6">
+        <ProgramBuilder
+          initial={program}
+          showEditWarning={editingProgram && historySessions.length > 0}
+          title={editingProgram ? 'Edit your program' : 'Set up your training program'}
+          description={
+            editingProgram
+              ? 'Update day names, and add or remove exercises. Save when you are done.'
+              : 'Add one or more training days, then add exercises to each. You can change this later from the workout log.'
+          }
+          onSave={async (next) => {
+            const r = await saveProgram(next);
+            if (r.ok) {
+              setEditingProgram(false);
+              await refetchProgram();
+              bumpHistory();
+            }
+            return r;
+          }}
+          onCancel={editingProgram && hasProgram ? () => setEditingProgram(false) : undefined}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <section className="rounded-2xl border border-stone-800 bg-neutral-900/40 p-5 md:p-6">
         <div className="flex flex-col gap-4">
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-wider text-stone-500">
                 Current workout
@@ -211,6 +283,14 @@ export function WorkoutTracker() {
                 </span>
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setEditingProgram(true)}
+              className="inline-flex cursor-pointer items-center justify-center gap-2 self-start rounded-lg border border-stone-700 bg-neutral-950 px-3 py-2 text-sm text-stone-200 transition-colors hover:border-stone-600 hover:bg-stone-800/60"
+            >
+              <Pencil className="h-4 w-4 shrink-0" aria-hidden />
+              Edit program
+            </button>
 
             <label className="flex shrink-0 flex-col gap-1 text-sm">
               <span className="text-stone-500">Date</span>
@@ -224,18 +304,18 @@ export function WorkoutTracker() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {DAY_TABS.map((t) => (
+            {program?.days.map((d) => (
               <button
-                key={t.key}
+                key={d.key}
                 type="button"
-                onClick={() => setActiveDay(t.key)}
+                onClick={() => setActiveDay(d.key)}
                 className={`touch-manipulation rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  activeDay === t.key
+                  activeDay === d.key
                     ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                     : 'border border-stone-700 bg-neutral-950 text-stone-400 hover:border-stone-600 hover:text-stone-200'
                 }`}
               >
-                {t.label}
+                {d.shortLabel}
               </button>
             ))}
           </div>
@@ -289,7 +369,7 @@ export function WorkoutTracker() {
               Programme notes
             </p>
             <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-stone-400">
-              {PROGRAM_NOTES.map((line) => (
+              {DEFAULT_PROGRAM_TIPS.map((line) => (
                 <li key={line}>{line}</li>
               ))}
             </ul>
@@ -510,7 +590,7 @@ export function WorkoutTracker() {
         ) : (
           <ul className="mt-4 divide-y divide-stone-800 overflow-hidden rounded-xl border border-stone-800/80">
             {historySessions.slice(0, 40).map((s) => {
-              const day = getDayByKey(s.day_key);
+              const day = program ? getDayFromProgram(program, s.day_key) : undefined;
               const isActive = s.session_date === sessionDate && s.day_key === activeDay;
               return (
                 <li key={s.id} className="flex items-stretch">
@@ -567,8 +647,10 @@ export function WorkoutTracker() {
                   <span className="font-medium text-stone-300">
                     {formatSessionDateLabel(pendingDelete.session_date)}
                   </span>{' '}
-                  ({getDayByKey(pendingDelete.day_key)?.shortLabel ?? pendingDelete.day_key}) from your
-                  history. This cannot be undone.
+                  (
+                  {getDayFromProgram(program, pendingDelete.day_key)?.shortLabel ??
+                    pendingDelete.day_key}
+                  ) from your history. This cannot be undone.
                 </>
               ) : null}
             </AlertDialogDescription>

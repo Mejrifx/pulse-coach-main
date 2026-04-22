@@ -10,16 +10,13 @@ export type WorkoutSessionSummary = {
   updated_at: string;
 };
 
-const DAY_SORT: Record<DayKey, number> = {
-  day1: 1,
-  day2: 2,
-  day3: 3,
-  day4: 4,
-  abs: 5,
-};
+const DEFAULT_DAY_ORDER = ['day1', 'day2', 'day3', 'day4', 'abs'] as const;
 
-/** `refreshKey` — bump after a save so the list reloads. */
-export function useWorkoutHistory(refreshKey: number) {
+/** Order for same-day tie-break; keys not in the list sort last. */
+export function useWorkoutHistory(
+  refreshKey: number,
+  dayOrder: readonly string[] = DEFAULT_DAY_ORDER,
+) {
   const { user } = useAuth();
   const [sessions, setSessions] = useState<WorkoutSessionSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,12 +47,16 @@ export function useWorkoutHistory(refreshKey: number) {
         return;
       }
 
+      const rank = (k: string) => {
+        const i = dayOrder.indexOf(k);
+        return i === -1 ? 999 : i;
+      };
       const rows = (data ?? []) as WorkoutSessionSummary[];
       rows.sort((a, b) => {
         if (a.session_date !== b.session_date) {
           return b.session_date.localeCompare(a.session_date);
         }
-        return (DAY_SORT[b.day_key] ?? 0) - (DAY_SORT[a.day_key] ?? 0);
+        return rank(b.day_key) - rank(a.day_key);
       });
       setSessions(rows);
       setLoading(false);
@@ -65,7 +66,7 @@ export function useWorkoutHistory(refreshKey: number) {
     return () => {
       cancelled = true;
     };
-  }, [user, refreshKey]);
+  }, [user, refreshKey, dayOrder]);
 
   return { sessions, loading };
 }

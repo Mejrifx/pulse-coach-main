@@ -2,8 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/supabaseClient';
 import { useAuth } from '@/contexts/AuthContext';
-import { getDayByKey } from '@/data/trainingProgram';
-import type { DayKey } from '@/types/workout';
+import type { DayDef, DayKey } from '@/types/workout';
 
 export type SetInput = { weight: string; reps: string };
 
@@ -14,6 +13,8 @@ function cellKey(exerciseId: string, setIndex: number) {
 type SessionOptions = {
   /** Called after a successful save (after reload). Use to refresh history lists. */
   onSaved?: () => void;
+  /** Current day template from the user program. Required to save. */
+  day: DayDef | null;
 };
 
 export function useWorkoutSession(
@@ -21,6 +22,7 @@ export function useWorkoutSession(
   sessionDate: string,
   options?: SessionOptions,
 ) {
+  const day = options?.day ?? null;
   const { user } = useAuth();
   const onSavedRef = useRef(options?.onSaved);
   useEffect(() => {
@@ -33,6 +35,12 @@ export function useWorkoutSession(
 
   const load = useCallback(async () => {
     if (!supabase || !user) {
+      setValues({});
+      setIsSavedSession(false);
+      setLoading(false);
+      return;
+    }
+    if (!dayKey) {
       setValues({});
       setIsSavedSession(false);
       setLoading(false);
@@ -86,7 +94,7 @@ export function useWorkoutSession(
 
   useEffect(() => {
     void load();
-  }, [load]);
+  }, [load, day]);
 
   const setCell = useCallback(
     (exerciseId: string, setIndex: number, field: 'weight' | 'reps', val: string) => {
@@ -104,8 +112,10 @@ export function useWorkoutSession(
       toast.error('Not signed in or Supabase not configured.');
       return;
     }
-    const day = getDayByKey(dayKey);
-    if (!day) return;
+    if (!day) {
+      toast.error('No workout day loaded. Set up your program first.');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -171,7 +181,7 @@ export function useWorkoutSession(
     } finally {
       setSaving(false);
     }
-  }, [user, dayKey, sessionDate, values, load]);
+  }, [user, day, dayKey, sessionDate, values, load]);
 
   return { values, setCell, isSavedSession, loading, saving, save, reload: load };
 }
