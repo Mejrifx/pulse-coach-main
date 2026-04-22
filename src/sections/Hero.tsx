@@ -15,10 +15,13 @@ import {
 
 gsap.registerPlugin(ScrollTrigger);
 
-const FRAME_COUNT = 138;
-const FRAME_START = 14;
-const framePathTemplate = (index: number) =>
-  `/Pulse%20Video%20Frames/ezgif-frame-${String(index + FRAME_START - 1).padStart(3, '0')}.jpg`;
+const FRAME_COUNT = 145;
+const FRAME_END = 151;
+// Reverse: play from frame 151 down to frame 7
+const framePathTemplate = (index: number) => {
+  const frameNumber = FRAME_END - index;
+  return `/Pulse%20Video%20Frames/ezgif-frame-${String(frameNumber).padStart(3, '0')}.jpg`;
+};
 
 type HeroCardData = {
   icon: typeof Activity;
@@ -211,7 +214,7 @@ const Hero: React.FC = () => {
             start: 'top top',
             end: '+=500%',
             pin: true,
-            scrub: 1,
+            scrub: 0.5,
             anticipatePin: 1,
           },
         });
@@ -370,11 +373,12 @@ const Hero: React.FC = () => {
       <div
         ref={frameSequenceRef}
         className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center opacity-0"
+        style={{ willChange: 'opacity' }}
       >
         <ScrollFrameSequence
           frameCount={FRAME_COUNT}
           framePathTemplate={framePathTemplate}
-          className="h-full w-full max-w-7xl"
+          className="h-full w-full"
           startTrigger="top top"
           endTrigger="+=500%"
         />

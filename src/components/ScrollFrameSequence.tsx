@@ -72,21 +72,28 @@ export function ScrollFrameSequence({
 
     if (img?.complete && img.naturalWidth > 0) {
       currentFrameRef.current = frameIndex;
+      
+      // Fill viewport - scale to cover full width, center vertically
       const canvasAspect = canvas.width / canvas.height;
       const imgAspect = img.naturalWidth / img.naturalHeight;
 
       let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
+      let dx = 0, dy = 0, dw = canvas.width, dh = canvas.height;
 
       if (imgAspect > canvasAspect) {
-        sw = img.naturalHeight * canvasAspect;
-        sx = (img.naturalWidth - sw) / 2;
+        // Image is wider - fit to canvas height, crop sides
+        const scaledWidth = img.naturalWidth * (canvas.height / img.naturalHeight);
+        dw = scaledWidth;
+        dx = (canvas.width - scaledWidth) / 2;
       } else {
-        sh = img.naturalWidth / canvasAspect;
-        sy = (img.naturalHeight - sh) / 2;
+        // Image is taller - fit to canvas width, crop top/bottom
+        const scaledHeight = img.naturalHeight * (canvas.width / img.naturalWidth);
+        dh = scaledHeight;
+        dy = (canvas.height - scaledHeight) / 2;
       }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
     }
   };
 
@@ -115,7 +122,7 @@ export function ScrollFrameSequence({
         trigger: container,
         start: startTrigger,
         end: endTrigger,
-        scrub: 1,
+        scrub: 0.5,
         onUpdate: (self) => {
           frameIndex.value = self.progress * (frameCount - 1);
           render(frameIndex.value);
@@ -158,6 +165,7 @@ export function ScrollFrameSequence({
       <canvas
         ref={canvasRef}
         className={`h-full w-full ${loaded ? 'opacity-100' : 'opacity-0'} transition-opacity duration-500`}
+        style={{ willChange: 'transform' }}
       />
     </div>
   );
