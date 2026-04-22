@@ -73,27 +73,26 @@ export function ScrollFrameSequence({
     if (img?.complete && img.naturalWidth > 0) {
       currentFrameRef.current = frameIndex;
       
-      // Fill viewport - scale to cover full width, center vertically
+      // Fit perfectly within viewport (contain mode) - no stretching or overflow
       const canvasAspect = canvas.width / canvas.height;
       const imgAspect = img.naturalWidth / img.naturalHeight;
 
-      let sx = 0, sy = 0, sw = img.naturalWidth, sh = img.naturalHeight;
       let dx = 0, dy = 0, dw = canvas.width, dh = canvas.height;
 
       if (imgAspect > canvasAspect) {
-        // Image is wider - fit to canvas height, crop sides
-        const scaledWidth = img.naturalWidth * (canvas.height / img.naturalHeight);
-        dw = scaledWidth;
-        dx = (canvas.width - scaledWidth) / 2;
+        // Image is wider - fit to canvas width, letterbox top/bottom
+        dw = canvas.width;
+        dh = canvas.width / imgAspect;
+        dy = (canvas.height - dh) / 2;
       } else {
-        // Image is taller - fit to canvas width, crop top/bottom
-        const scaledHeight = img.naturalHeight * (canvas.width / img.naturalWidth);
-        dh = scaledHeight;
-        dy = (canvas.height - scaledHeight) / 2;
+        // Image is taller - fit to canvas height, pillarbox left/right
+        dh = canvas.height;
+        dw = canvas.height * imgAspect;
+        dx = (canvas.width - dw) / 2;
       }
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+      ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, dx, dy, dw, dh);
     }
   };
 
@@ -122,9 +121,11 @@ export function ScrollFrameSequence({
         trigger: container,
         start: startTrigger,
         end: endTrigger,
-        scrub: 0.5,
+        scrub: 0.8,
         onUpdate: (self) => {
-          frameIndex.value = self.progress * (frameCount - 1);
+          const targetFrame = self.progress * (frameCount - 1);
+          // Smooth interpolation between frames for buttery effect
+          frameIndex.value += (targetFrame - frameIndex.value) * 0.15;
           render(frameIndex.value);
         },
       },
