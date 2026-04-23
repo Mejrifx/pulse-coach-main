@@ -214,7 +214,7 @@ const Hero: React.FC = () => {
             start: 'top top',
             end: '+=600%',
             pin: true,
-            scrub: 1.2,
+            scrub: true,
             anticipatePin: 1,
           },
         });

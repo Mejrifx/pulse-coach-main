@@ -140,10 +140,9 @@ export function ScrollFrameSequence({
         trigger: container,
         start: startTrigger,
         end: endTrigger,
-        scrub: 1.2,
+        scrub: true,
         onUpdate: (self) => {
-          const targetFrame = self.progress * (frameCount - 1);
-          frameIndex.value += (targetFrame - frameIndex.value) * 0.25;
+          frameIndex.value = self.progress * (frameCount - 1);
           
           if (rafId === null) {
             rafId = requestAnimationFrame(updateFrame);
