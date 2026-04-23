@@ -212,9 +212,9 @@ const Hero: React.FC = () => {
           scrollTrigger: {
             trigger: section,
             start: 'top top',
-            end: '+=500%',
+            end: '+=600%',
             pin: true,
-            scrub: 0.8,
+            scrub: 1.2,
             anticipatePin: 1,
           },
         });
@@ -380,7 +380,7 @@ const Hero: React.FC = () => {
           framePathTemplate={framePathTemplate}
           className="h-full w-full"
           startTrigger="top top"
-          endTrigger="+=500%"
+          endTrigger="+=600%"
         />
       </div>
     </section>

@@ -61,39 +61,52 @@ export function ScrollFrameSequence({
     imagesRef.current = images;
   }, [frameCount, framePathTemplate]);
 
-  // Render current frame
+  // Render current frame with sub-frame interpolation for smooth motion
   const render = (index: number) => {
     const canvas = canvasRef.current;
     const ctx = canvas?.getContext('2d');
     if (!canvas || !ctx) return;
 
-    const frameIndex = Math.max(0, Math.min(frameCount - 1, Math.floor(index)));
-    const img = imagesRef.current[frameIndex];
+    const clampedIndex = Math.max(0, Math.min(frameCount - 1, index));
+    const frameIndexA = Math.floor(clampedIndex);
+    const frameIndexB = Math.min(frameCount - 1, Math.ceil(clampedIndex));
+    const blend = clampedIndex - frameIndexA;
 
-    if (img?.complete && img.naturalWidth > 0) {
-      currentFrameRef.current = frameIndex;
-      
-      // Fit perfectly within viewport (contain mode) - no stretching or overflow
-      const canvasAspect = canvas.width / canvas.height;
-      const imgAspect = img.naturalWidth / img.naturalHeight;
+    const imgA = imagesRef.current[frameIndexA];
+    const imgB = imagesRef.current[frameIndexB];
 
-      let dx = 0, dy = 0, dw = canvas.width, dh = canvas.height;
+    if (!imgA?.complete || imgA.naturalWidth <= 0) return;
 
-      if (imgAspect > canvasAspect) {
-        // Image is wider - fit to canvas width, letterbox top/bottom
-        dw = canvas.width;
-        dh = canvas.width / imgAspect;
-        dy = (canvas.height - dh) / 2;
-      } else {
-        // Image is taller - fit to canvas height, pillarbox left/right
-        dh = canvas.height;
-        dw = canvas.height * imgAspect;
-        dx = (canvas.width - dw) / 2;
-      }
+    currentFrameRef.current = clampedIndex;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, img.naturalWidth, img.naturalHeight, dx, dy, dw, dh);
+    const canvasAspect = canvas.width / canvas.height;
+    const imgAspect = imgA.naturalWidth / imgA.naturalHeight;
+
+    let dx = 0, dy = 0, dw = canvas.width, dh = canvas.height;
+
+    if (imgAspect > canvasAspect) {
+      dw = canvas.width;
+      dh = canvas.width / imgAspect;
+      dy = (canvas.height - dh) / 2;
+    } else {
+      dh = canvas.height;
+      dw = canvas.height * imgAspect;
+      dx = (canvas.width - dw) / 2;
     }
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Render base frame
+    ctx.globalAlpha = 1;
+    ctx.drawImage(imgA, 0, 0, imgA.naturalWidth, imgA.naturalHeight, dx, dy, dw, dh);
+
+    // Blend next frame if between frames for sub-frame smoothness
+    if (blend > 0.001 && frameIndexB !== frameIndexA && imgB?.complete && imgB.naturalWidth > 0) {
+      ctx.globalAlpha = blend;
+      ctx.drawImage(imgB, 0, 0, imgB.naturalWidth, imgB.naturalHeight, dx, dy, dw, dh);
+    }
+
+    ctx.globalAlpha = 1;
   };
 
   // Setup scroll animation
@@ -115,18 +128,26 @@ export function ScrollFrameSequence({
     render(0);
 
     const frameIndex = { value: 0 };
+    let rafId: number | null = null;
+
+    const updateFrame = () => {
+      render(frameIndex.value);
+      rafId = null;
+    };
 
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: container,
         start: startTrigger,
         end: endTrigger,
-        scrub: 0.8,
+        scrub: 1.2,
         onUpdate: (self) => {
           const targetFrame = self.progress * (frameCount - 1);
-          // Smooth interpolation between frames for buttery effect
-          frameIndex.value += (targetFrame - frameIndex.value) * 0.15;
-          render(frameIndex.value);
+          frameIndex.value += (targetFrame - frameIndex.value) * 0.25;
+          
+          if (rafId === null) {
+            rafId = requestAnimationFrame(updateFrame);
+          }
         },
       },
     });
@@ -139,6 +160,7 @@ export function ScrollFrameSequence({
 
     return () => {
       window.removeEventListener('resize', onResize);
+      if (rafId !== null) cancelAnimationFrame(rafId);
       tl.kill();
       ScrollTrigger.getAll().forEach((st) => {
         if (st.vars.trigger === container) st.kill();
