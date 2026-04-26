@@ -15,12 +15,10 @@ import {
 
 gsap.registerPlugin(ScrollTrigger);
 
-const FRAME_COUNT = 151;
-const FRAME_END = 151;
-// Reverse: play from frame 151 down to frame 1
+const FRAME_COUNT = 302;
+// Forward playback: frames 1-302 (60fps interpolated, optimized JPG)
 const framePathTemplate = (index: number) => {
-  const frameNumber = FRAME_END - index;
-  return `/Pulse%20Video%20Frames/ezgif-frame-${String(frameNumber).padStart(3, '0')}.jpg`;
+  return `/frames/frame_${String(index).padStart(5, '0')}.jpg`;
 };
 
 type HeroCardData = {
@@ -212,7 +210,7 @@ const Hero: React.FC = () => {
           scrollTrigger: {
             trigger: section,
             start: 'top top',
-            end: '+=600%',
+            end: '+=900%',
             pin: true,
             scrub: true,
             anticipatePin: 1,
@@ -380,7 +378,7 @@ const Hero: React.FC = () => {
           framePathTemplate={framePathTemplate}
           className="h-full w-full"
           startTrigger="top top"
-          endTrigger="+=600%"
+          endTrigger="+=900%"
         />
       </div>
     </section>
