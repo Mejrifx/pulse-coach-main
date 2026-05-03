@@ -13,8 +13,9 @@ type ScrollFrameSequenceProps = {
 };
 
 /**
- * Scroll-driven frame sequence player using Canvas for performance.
- * Preloads images and renders the current frame based on scroll position.
+ * Scroll-driven frame sequence player with smooth interpolation.
+ * Decouples scroll input from rendering to prevent frame jumping and ensure
+ * continuous, stable motion even during rapid scrolling.
  */
 export function ScrollFrameSequence({
   frameCount,
@@ -29,6 +30,8 @@ export function ScrollFrameSequence({
   const [loadProgress, setLoadProgress] = useState(0);
   const [loaded, setLoaded] = useState(false);
   const currentFrameRef = useRef(0);
+  const targetFrameRef = useRef(0);
+  const renderLoopRef = useRef<number | null>(null);
 
   // Preload all frames
   useEffect(() => {
@@ -109,6 +112,55 @@ export function ScrollFrameSequence({
     ctx.globalAlpha = 1;
   };
 
+  // Decoupled render loop for smooth interpolation
+  useEffect(() => {
+    if (!loaded) return;
+
+    let lastTime = performance.now();
+    const targetFPS = 60;
+    const frameTime = 1000 / targetFPS;
+
+    const renderLoop = (currentTime: number) => {
+      const elapsed = currentTime - lastTime;
+
+      // Throttle to ~60fps
+      if (elapsed >= frameTime) {
+        const distance = Math.abs(targetFrameRef.current - currentFrameRef.current);
+        
+        // Adaptive interpolation: faster when far, smoother when close
+        // This prevents large jumps while maintaining responsiveness
+        let speed;
+        if (distance > 5) {
+          speed = 0.2; // Fast catch-up
+        } else if (distance > 1) {
+          speed = 0.12; // Medium smoothing
+        } else {
+          speed = 0.08; // Fine control for slow scrolling
+        }
+
+        const nextFrame = currentFrameRef.current + (targetFrameRef.current - currentFrameRef.current) * speed;
+
+        // Only render if change is meaningful
+        if (Math.abs(nextFrame - currentFrameRef.current) > 0.01) {
+          render(nextFrame);
+          currentFrameRef.current = nextFrame;
+        }
+
+        lastTime = currentTime;
+      }
+
+      renderLoopRef.current = requestAnimationFrame(renderLoop);
+    };
+
+    renderLoopRef.current = requestAnimationFrame(renderLoop);
+
+    return () => {
+      if (renderLoopRef.current !== null) {
+        cancelAnimationFrame(renderLoopRef.current);
+      }
+    };
+  }, [loaded, frameCount]);
+
   // Setup scroll animation
   useLayoutEffect(() => {
     if (!loaded) return;
@@ -127,14 +179,7 @@ export function ScrollFrameSequence({
     updateCanvasSize();
     render(0);
 
-    const frameIndex = { value: 0 };
-    let rafId: number | null = null;
-
-    const updateFrame = () => {
-      render(frameIndex.value);
-      rafId = null;
-    };
-
+    // GSAP scroll updates only set target - render loop handles display
     const tl = gsap.timeline({
       scrollTrigger: {
         trigger: container,
@@ -142,11 +187,8 @@ export function ScrollFrameSequence({
         end: endTrigger,
         scrub: true,
         onUpdate: (self) => {
-          frameIndex.value = self.progress * (frameCount - 1);
-          
-          if (rafId === null) {
-            rafId = requestAnimationFrame(updateFrame);
-          }
+          // Update target frame (lightweight)
+          targetFrameRef.current = self.progress * (frameCount - 1);
         },
       },
     });
@@ -159,7 +201,6 @@ export function ScrollFrameSequence({
 
     return () => {
       window.removeEventListener('resize', onResize);
-      if (rafId !== null) cancelAnimationFrame(rafId);
       tl.kill();
       ScrollTrigger.getAll().forEach((st) => {
         if (st.vars.trigger === container) st.kill();
