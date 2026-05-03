@@ -217,28 +217,28 @@ const Hero: React.FC = () => {
           },
         });
 
-        // Phase 1 (0% → 20%): Fade out original hero content
+        // Phase 1 (0% → 15%): Fade out original hero content
         mainTimeline.to(
           heroContentRef.current,
           {
             opacity: 0,
             y: -80,
             ease: 'power2.out',
-            duration: 0.2,
+            duration: 0.15,
           },
           0
         );
 
-        // Phase 2 (15% → 100%): Fade in and play frame sequence
+        // Phase 2 (0% → 8%): Fade in frame sequence immediately
         mainTimeline.fromTo(
           frameSequenceRef.current,
           { opacity: 0 },
           {
             opacity: 1,
             ease: 'power1.in',
-            duration: 0.15,
+            duration: 0.08,
           },
-          0.15
+          0
         );
 
         // Subtle background effects during animation
