@@ -217,26 +217,32 @@ const Hero: React.FC = () => {
           },
         });
 
-        // Phase 1 (0% → 15%): Fade out original hero content
+        // Phase 1 (0% → 20%): Fade out hero with blur and scale
         mainTimeline.to(
           heroContentRef.current,
           {
             opacity: 0,
-            y: -80,
-            ease: 'power2.out',
-            duration: 0.15,
+            y: -60,
+            scale: 0.95,
+            filter: 'blur(20px)',
+            ease: 'power2.inOut',
+            duration: 0.2,
           },
           0
         );
 
-        // Phase 2 (0% → 8%): Fade in frame sequence immediately
+        // Phase 2 (0% → 12%): Fade in frame sequence with blur transition
         mainTimeline.fromTo(
           frameSequenceRef.current,
-          { opacity: 0 },
+          { 
+            opacity: 0,
+            filter: 'blur(30px)',
+          },
           {
             opacity: 1,
-            ease: 'power1.in',
-            duration: 0.08,
+            filter: 'blur(0px)',
+            ease: 'power2.out',
+            duration: 0.12,
           },
           0
         );
