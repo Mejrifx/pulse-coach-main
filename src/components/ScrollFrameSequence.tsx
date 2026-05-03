@@ -87,17 +87,22 @@ export function ScrollFrameSequence({
 
     let dx = 0, dy = 0, dw = canvas.width, dh = canvas.height;
 
+    // "Cover" mode: fill entire viewport, crop if needed (no letterboxing)
     if (imgAspect > canvasAspect) {
-      dw = canvas.width;
-      dh = canvas.width / imgAspect;
-      dy = (canvas.height - dh) / 2;
-    } else {
+      // Image is wider: fit height, crop sides
       dh = canvas.height;
       dw = canvas.height * imgAspect;
       dx = (canvas.width - dw) / 2;
+    } else {
+      // Image is taller: fit width, crop top/bottom
+      dw = canvas.width;
+      dh = canvas.width / imgAspect;
+      dy = (canvas.height - dh) / 2;
     }
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    // Fill with site background color for seamless blending
+    ctx.fillStyle = '#0a0a0a'; // neutral-950
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     // Render base frame
     ctx.globalAlpha = 1;
